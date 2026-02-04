@@ -1,12 +1,14 @@
 package com.trustbridge.Features.Jobs;
 
 import com.trustbridge.Domain.Entities.Jobs;
+import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Entities.Users;
 import com.trustbridge.Domain.Enums.JobStatus.*;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Auth.RegistrationService;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
+import com.trustbridge.Features.Jobs.Milestones.MilestoneService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -15,6 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.apache.commons.lang3.RandomStringUtils;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+
 @Service
 public class JobService {
 
@@ -22,14 +28,16 @@ public class JobService {
     UserRepository userRepository;
     RegistrationService registrationService;
     EmailService emailService;
+    MilestoneService milestoneService;
 
     private final String BASE_URL = "https://localhost:8080/invite/";
 
-    public JobService(JobRepository jobRepository, UserRepository userRepository, RegistrationService registrationService,  EmailService emailService) {
+    public JobService(JobRepository jobRepository, UserRepository userRepository, RegistrationService registrationService,  EmailService emailService,  MilestoneService milestoneService) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.registrationService = registrationService;
         this.emailService = emailService;
+        this.milestoneService = milestoneService;
     }
 
     @Transactional
@@ -61,6 +69,7 @@ public class JobService {
         Users freelancer = userRepository.findByEmail(dto.freelancerEmail())
                 .orElseThrow(() -> new RuntimeException("Freelancer not found"));
 
+
         Jobs newJob = Jobs.builder()
                 .freelancer(freelancer)
                 .client(client)
@@ -74,6 +83,26 @@ public class JobService {
                 .build();
 
         jobRepository.save(newJob);
+
+        if (dto.milestones() != null && !dto.milestones().isEmpty()) {
+            if (!milestoneTotalValid(dto.milestones(), dto)) {
+                throw new RuntimeException("Milestone total does not equal job amount!");
+            }
+            milestoneService.createMilestones(newJob ,dto.milestones());
+        } else {
+
+            // Scenario B: No milestones provided (Simple "Lump Sum" Job)
+            // ✅ AUTO-CREATE ONE MILESTONE FOR 100% OF THE VALUE
+
+            JobCreationDto.MilestoneCreationDto defaultMilestone = new JobCreationDto.MilestoneCreationDto(
+                    "Project Completion", // Description
+                    dto.amount(),         // Full Amount
+                    1                     // Sequence
+            );
+
+            milestoneService.createMilestones(newJob, List.of(defaultMilestone));
+        }
+
     }
 
     @Transactional
@@ -96,9 +125,27 @@ public class JobService {
                 .build();
 
         jobRepository.save(DraftJob);
+
+        if (dto.milestones() != null && !dto.milestones().isEmpty()) {
+            if (!milestoneTotalValid(dto.milestones(), dto)) {
+                throw new RuntimeException("Milestone total does not equal job amount!");
+            }
+            milestoneService.createMilestones(DraftJob ,dto.milestones());
+        }
     }
 
-    //TODO: create delete job transactional
+    @Transactional
+    public void deleteDraftJob(@Valid @RequestBody UUID jobId) {
+
+        Jobs job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found!"));
+
+        if (!job.getStatus().equals(jobStatus.DRAFT)) {
+            throw new RuntimeException("Job status is not DRAFT!");
+        }
+
+        jobRepository.delete(job);
+    }
 
     @Async
     private void sendNotificationEmail(JobCreationDto dto, String inviteLink) {
@@ -170,5 +217,26 @@ public class JobService {
 
     private boolean hasEmail(String  email) {
         return email != null && !email.isBlank();
+    }
+
+    private boolean milestoneTotalValid(List<JobCreationDto.MilestoneCreationDto> milestones, JobCreationDto job) {
+
+        List<BigDecimal> milestonesAmounts = milestones.stream()
+                .map( milestone -> milestone.amount()).toList();
+
+        BigDecimal milestoneTotal = BigDecimal.ZERO;
+
+        for(BigDecimal  milestone : milestonesAmounts) {
+            milestoneTotal = milestoneTotal.add(milestone);
+        }
+
+        if (!milestoneTotal.equals(job.amount())) {
+            System.out.println("Milestone total: " + milestoneTotal);
+            System.out.println("Job Amount: " + job.amount());
+            return false;
+        }
+
+        return true;
+
     }
 }
