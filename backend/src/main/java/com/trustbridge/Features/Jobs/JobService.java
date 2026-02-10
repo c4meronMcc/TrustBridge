@@ -69,7 +69,6 @@ public class JobService {
         Users freelancer = userRepository.findByEmail(dto.freelancerEmail())
                 .orElseThrow(() -> new RuntimeException("Freelancer not found"));
 
-
         Jobs newJob = Jobs.builder()
                 .freelancer(freelancer)
                 .client(client)
@@ -90,14 +89,10 @@ public class JobService {
             }
             milestoneService.createMilestones(newJob ,dto.milestones());
         } else {
-
-            // Scenario B: No milestones provided (Simple "Lump Sum" Job)
-            // ✅ AUTO-CREATE ONE MILESTONE FOR 100% OF THE VALUE
-
             JobCreationDto.MilestoneCreationDto defaultMilestone = new JobCreationDto.MilestoneCreationDto(
-                    "Project Completion", // Description
-                    dto.amount(),         // Full Amount
-                    1                     // Sequence
+                    "Project Completion",
+                    dto.amount(),
+                    1
             );
 
             milestoneService.createMilestones(newJob, List.of(defaultMilestone));
@@ -235,8 +230,6 @@ public class JobService {
             System.out.println("Job Amount: " + job.amount());
             return false;
         }
-
         return true;
-
     }
 }
