@@ -45,6 +45,7 @@ dependencies {
 	implementation "org.zalando:jackson-datatype-money:${zalandoMoneyVersion}"
 	implementation 'org.apache.commons:commons-lang3'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'com.stripe:stripe-java:24.18.0'
 
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'

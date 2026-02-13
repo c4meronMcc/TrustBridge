@@ -1,8 +1,10 @@
 package com.trustbridge.Features.Jobs;
 
+import com.google.errorprone.annotations.ThreadSafe;
 import com.trustbridge.Domain.Entities.Jobs;
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Entities.Users;
+import com.trustbridge.Domain.Enums.JobStatus;
 import com.trustbridge.Domain.Enums.JobStatus.*;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
@@ -11,7 +13,6 @@ import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
 import com.trustbridge.Features.Jobs.Milestones.MilestoneService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -142,6 +143,50 @@ public class JobService {
         jobRepository.delete(job);
     }
 
+    @Transactional
+    public void jobStatusToComplete(@Valid @RequestBody UUID jobId) {
+        Jobs job = checkJobExists(jobId);
+
+        job.setStatus(jobStatus.COMPLETE);
+        jobRepository.save(job);
+    }
+
+    @Transactional
+    public void jobStatusToCancelled(@Valid @RequestBody UUID jobId) {
+        Jobs job = checkJobExists(jobId);
+
+        job.setStatus(jobStatus.CANCELLED);
+        jobRepository.save(job);
+    }
+
+    @Transactional
+    public void jobStatusToPendingAccepted(@Valid @RequestBody UUID jobId) {
+        Jobs job = checkJobExists(jobId);
+
+        job.setStatus(jobStatus.PENDING_ACCEPTANCE);
+        jobRepository.save(job);
+    }
+
+    @Transactional
+    public void jobStatusToActive(@Valid @RequestBody UUID jobId) {
+        Jobs job = checkJobExists(jobId);
+
+        job.setStatus(jobStatus.ACTIVE);
+
+    }
+
+    /**
+     * function to change the status to disputed
+     * waiting to update the database before I can uncomment this!**/
+    /*@Transactional
+    public void jobStatusToDisputed(@Valid @RequestBody UUID jobId) {
+        Jobs job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found!"));
+
+        job.setStatus(jobStatus.DISPUTED);
+        jobRepository.save(job);
+    }*/
+
     @Async
     private void sendNotificationEmail(JobCreationDto dto, String inviteLink) {
         String body = buildEmailTemplate(dto, inviteLink);
@@ -231,5 +276,12 @@ public class JobService {
             return false;
         }
         return true;
+    }
+
+    public Jobs checkJobExists(@Valid UUID jobId) {
+        Jobs job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found!"));
+
+        return job;
     }
 }
