@@ -1,16 +1,12 @@
-package com.trustbridge.Features.Jobs;
+package com.trustbridge.Features.Jobs.Service;
 
-import com.google.errorprone.annotations.ThreadSafe;
 import com.trustbridge.Domain.Entities.Jobs;
-import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Entities.Users;
-import com.trustbridge.Domain.Enums.JobStatus;
 import com.trustbridge.Domain.Enums.JobStatus.*;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Auth.RegistrationService;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
-import com.trustbridge.Features.Jobs.Milestones.MilestoneService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.scheduling.annotation.Async;
@@ -147,7 +143,7 @@ public class JobService {
     public void jobStatusToComplete(@Valid @RequestBody UUID jobId) {
         Jobs job = checkJobExists(jobId);
 
-        job.setStatus(jobStatus.COMPLETE);
+        job.setStatus(jobStatus.PAID_OUT);
         jobRepository.save(job);
     }
 
@@ -171,7 +167,7 @@ public class JobService {
     public void jobStatusToActive(@Valid @RequestBody UUID jobId) {
         Jobs job = checkJobExists(jobId);
 
-        job.setStatus(jobStatus.ACTIVE);
+        job.setStatus(jobStatus.IN_PROGRESS);
 
     }
 

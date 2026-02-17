@@ -1,12 +1,10 @@
-package com.trustbridge.Features.Jobs.Milestones;
+package com.trustbridge.Features.Jobs.Service;
 
 import com.trustbridge.Domain.Entities.Jobs;
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
-import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
-import com.trustbridge.Features.Jobs.JobService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
@@ -40,7 +38,7 @@ public class MilestoneService {
                         .title(dto.title())
                         .amount(dto.amount())
                         .sequenceOrder(dto.sequence_amount())
-                        .status(MilestoneStatus.milestoneStatus.PENDING)
+                        .status(MilestoneStatus.milestoneStatus.LOCKED)
                         .build()
                 ).toList();
 
@@ -52,7 +50,7 @@ public class MilestoneService {
     @Transactional
     public void changeStateToFunded(@Valid @RequestBody UUID milestoneId) {
         Milestones milestone = milestoneRepository.findById(milestoneId);
-        milestone.setStatus(MilestoneStatus.milestoneStatus.FUNDED);
+        milestone.setStatus(MilestoneStatus.milestoneStatus.IN_PROGRESS);
         milestoneRepository.save(milestone);
     }
 
@@ -62,7 +60,7 @@ public class MilestoneService {
         int numberOfMilestones = milestoneRepository.findAllByJobId(milestone.getJob().getId()).size();
 
         if (milestone.getSequenceOrder() == numberOfMilestones - 1) {
-            milestone.setStatus(MilestoneStatus.milestoneStatus.FUNDED);
+            milestone.setStatus(MilestoneStatus.milestoneStatus.IN_PROGRESS);
             milestoneRepository.save(milestone);
             jobService.jobStatusToComplete(milestone.getJob().getId());
         }

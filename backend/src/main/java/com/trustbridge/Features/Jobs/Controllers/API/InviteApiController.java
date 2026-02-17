@@ -1,4 +1,4 @@
-package com.trustbridge.Features.Jobs;
+package com.trustbridge.Features.Jobs.Controllers.API;
 
 import com.trustbridge.Domain.Entities.Jobs;
 import com.trustbridge.Domain.Entities.Users;

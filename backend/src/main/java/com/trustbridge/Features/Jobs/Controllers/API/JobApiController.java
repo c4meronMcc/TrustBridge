@@ -1,4 +1,4 @@
-package com.trustbridge.Features.Jobs;
+package com.trustbridge.Features.Jobs.Controllers.API;
 
 import ch.qos.logback.core.model.Model;
 import com.trustbridge.Domain.Entities.Jobs;
@@ -6,12 +6,14 @@ import com.trustbridge.Domain.Entities.Users;
 import com.trustbridge.Domain.Enums.UserRole.role;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
+import com.trustbridge.Features.Jobs.Service.JobService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/job")
@@ -47,6 +49,7 @@ public class JobApiController {
         if (client != null && client.getUserRole() != role.CLIENT_GUEST) {
             response.put("status", "EXISTING_USER");
             response.put("email", client.getEmail());
+            // TODO:
         } else {
             response.put("status", "INVITED");
             response.put("email", client != null ? client.getEmail() : null);
@@ -55,4 +58,21 @@ public class JobApiController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/status/cancelled/{jobId}")
+    public ResponseEntity<?> ChangeStatusToCancelled(@PathVariable String jobId) {
+        jobService.jobStatusToCancelled(UUID.fromString(jobId));
+        return ResponseEntity.ok("Job cancelled successfully!");
+    }
+
+    @PostMapping("/status/pending/{jobId}")
+    public ResponseEntity<?> ChangeStatusToPending(@PathVariable String jobId) {
+        jobService.jobStatusToPendingAccepted(UUID.fromString(jobId));
+        return ResponseEntity.ok("Job pending successfully!");
+    }
+
+    @PostMapping("/status/Active/{jobId}")
+    public ResponseEntity<?> ChangeStatusToActive(@PathVariable String jobId) {
+        jobService.jobStatusToActive(UUID.fromString(jobId));
+        return ResponseEntity.ok("Job active successfully!");
+    }
 }
