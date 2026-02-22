@@ -1,4 +1,4 @@
-package com.trustbridge.Config;
+package com.trustbridge.Features.Jobs.StateMachine;
 
 import com.trustbridge.Domain.Enums.JobEvent.*;
 import com.trustbridge.Domain.Enums.JobStatus.*;

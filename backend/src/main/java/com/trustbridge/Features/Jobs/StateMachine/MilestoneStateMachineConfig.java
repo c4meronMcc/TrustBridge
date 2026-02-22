@@ -1,4 +1,4 @@
-package com.trustbridge.Config;
+package com.trustbridge.Features.Jobs.StateMachine;
 
 import com.trustbridge.Domain.Enums.MilestoneStatus.*;
 import com.trustbridge.Domain.Enums.MilestoneEvent.*;
@@ -10,7 +10,6 @@ import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 
-import javax.swing.*;
 import java.util.EnumSet;
 import java.util.UUID;
 
