@@ -1,7 +1,6 @@
 package com.trustbridge.Domain.Enums;
 
 public class MilestoneStatus {
-
     public enum milestoneStatus{
         LOCKED,
         AWAITING_PAYMENT,
@@ -14,5 +13,4 @@ public class MilestoneStatus {
         DISPUTE_RESOLVED,
         CANCELLED
     }
-
 }

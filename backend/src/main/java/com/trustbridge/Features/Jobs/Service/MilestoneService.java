@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -49,14 +50,16 @@ public class MilestoneService {
 
     @Transactional
     public void changeStateToFunded(@Valid @RequestBody UUID milestoneId) {
-        Milestones milestone = milestoneRepository.findById(milestoneId);
+        Milestones milestone = milestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new RuntimeException("Milestone not found!"));
         milestone.setStatus(MilestoneStatus.milestoneStatus.IN_PROGRESS);
         milestoneRepository.save(milestone);
     }
 
     @Transactional
     public void changeStateToCompleted(@Valid @RequestBody UUID milestoneId) {
-        Milestones milestone = milestoneRepository.findById(milestoneId);
+        Milestones milestone = milestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new RuntimeException("Milestone not found!"));
         int numberOfMilestones = milestoneRepository.findAllByJobId(milestone.getJob().getId()).size();
 
         if (milestone.getSequenceOrder() == numberOfMilestones - 1) {
@@ -68,12 +71,9 @@ public class MilestoneService {
 
     @Transactional
     public void changeMilestoneState(@Valid @RequestBody UUID milestoneId) {
-        Milestones milestone = milestoneRepository.findById(milestoneId);
+        Milestones milestones = milestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new RuntimeException("Milestone not found!"));
 
         List<MilestoneStatus.milestoneStatus> statuses = Arrays.asList(MilestoneStatus.milestoneStatus.values());
-
-
-
-
     }
 }

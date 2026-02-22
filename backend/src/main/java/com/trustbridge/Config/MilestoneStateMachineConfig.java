@@ -2,13 +2,17 @@ package com.trustbridge.Config;
 
 import com.trustbridge.Domain.Enums.MilestoneStatus.*;
 import com.trustbridge.Domain.Enums.MilestoneEvent.*;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachine;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 
+import javax.swing.*;
 import java.util.EnumSet;
+import java.util.UUID;
 
 @Configuration
 @EnableStateMachine
@@ -77,8 +81,13 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                 .withExternal()
                 .source(milestoneStatus.DISPUTE_NEGOTIATION).target(milestoneStatus.DISPUTE_ARBITRATION)
                 .event(milestoneEvent.DISPUTE_TO_ARBITRATION);
-        }
+    }
 
-
-
+    @Bean
+    public Action<milestoneStatus, milestoneEvent> updateMilestoneStatusAction() {
+        return contex -> {
+            UUID milestoneId = (UUID) contex.getMessageHeaders().get("milestoneId");
+            System.out.println("Logic executed: Updating Milestone " + milestoneId + "to IN_PROGRESS");
+        };
+    }
 }

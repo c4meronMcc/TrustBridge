@@ -2,7 +2,6 @@ package com.trustbridge.Config;
 
 import com.trustbridge.Domain.Enums.JobEvent.*;
 import com.trustbridge.Domain.Enums.JobStatus.*;
-import javafx.animation.Transition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.config.EnableStateMachine;
@@ -42,6 +41,7 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
                 .withExternal()
                 .source(jobStatus.PENDING_ACCEPTANCE).target(jobStatus.CANCELLED)
                 .event(jobEvent.CANCEL_JOB)
+                // Draft -> Submitted (Job Submission)
                 .and()
                 .withExternal()
                 .source(jobStatus.SUBMITTED).target(jobStatus.IN_PROGRESS)

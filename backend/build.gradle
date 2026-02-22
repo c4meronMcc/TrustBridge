@@ -47,6 +47,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'com.stripe:stripe-java:24.18.0'
 	implementation 'org.springframework.statemachine:spring-statemachine-starter:4.0.0'
+	implementation 'org.springframework.statemachine:spring-statemachine-core:3.2.1'
 
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
