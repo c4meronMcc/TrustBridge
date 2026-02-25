@@ -65,7 +65,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                 .withExternal()
                 .source(milestoneStatus.APPROVED).target(milestoneStatus.PAID_OUT)
                 .event(milestoneEvent.RELEASE_FUNDS)
-                //Submitted -> Dispute  (Work Disputed)
+                //Submitted -> Dispute (Work Disputed)
                 .and()
                 .withExternal()
                 .source(milestoneStatus.SUBMITTED).target(milestoneStatus.DISPUTE_NEGOTIATION)
@@ -84,8 +84,8 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
 
     @Bean
     public Action<milestoneStatus, milestoneEvent> updateMilestoneStatusAction() {
-        return contex -> {
-            UUID milestoneId = (UUID) contex.getMessageHeaders().get("milestoneId");
+        return context -> {
+            UUID milestoneId = (UUID) context.getMessageHeaders().get("milestoneId");
             System.out.println("Logic executed: Updating Milestone " + milestoneId + "to IN_PROGRESS");
         };
     }

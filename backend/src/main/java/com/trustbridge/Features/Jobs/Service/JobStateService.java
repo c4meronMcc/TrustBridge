@@ -4,6 +4,7 @@ import com.trustbridge.Domain.Entities.Jobs;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Enums.JobStatus.*;
 import com.trustbridge.Domain.Enums.JobEvent.*;
+import com.trustbridge.Features.Jobs.StateMachine.Interceptors.JobStateChangeInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -23,6 +24,9 @@ public class JobStateService {
     @Autowired
     StateMachineFactory<jobStatus, jobEvent> stateMachineFactory;
 
+    @Autowired
+    JobStateChangeInterceptor jobInterceptor;
+
     public JobStateService(JobRepository jobRepository) {
         this.jobRepository = jobRepository;
     }
@@ -37,11 +41,11 @@ public class JobStateService {
         sm.stopReactively();
 
         sm.getStateMachineAccessor().doWithAllRegions(accessor -> {
+
+            accessor.addStateMachineInterceptor(jobInterceptor);
+
             accessor.resetStateMachineReactively(new DefaultStateMachineContext<>(
-                    job.getStatus(),
-                    null,
-                    null,
-                    null
+                    job.getStatus(),null,null,null
             ));
         });
 

@@ -1,6 +1,7 @@
 package com.trustbridge.Domain.Entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.trustbridge.Domain.Enums.PaymentRequestStatus;
 import com.trustbridge.Domain.Enums.PaymentRequestStatus.*;
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,7 +32,7 @@ public class PaymentRequest extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50, nullable = false)
-    private paymentRequestStatus status;
+    private PaymentRequestStatus status;
 
     @Column(name = "expires_at", nullable = false)
     private OffsetDateTime expiresAt;
@@ -44,7 +45,7 @@ public class PaymentRequest extends BaseEntity {
             expiresAt = OffsetDateTime.now().plusDays(7);
         }
         if (status == null) {
-            status = paymentRequestStatus.PENDING;
+            status = PaymentRequestStatus.PENDING;
         }
     }
 

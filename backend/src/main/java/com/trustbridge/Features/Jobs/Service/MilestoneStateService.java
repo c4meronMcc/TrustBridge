@@ -2,6 +2,7 @@ package com.trustbridge.Features.Jobs.Service;
 
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
+import com.trustbridge.Features.Jobs.StateMachine.Interceptors.MilestoneStateChangeInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -23,6 +24,9 @@ public class MilestoneStateService {
     @Autowired
     StateMachineFactory<milestoneStatus, milestoneEvent> stateMachineFactory;
 
+    @Autowired
+    MilestoneStateChangeInterceptor milestoneInterceptor;
+
     public MilestoneStateService(MilestoneRepository milestoneRepository) {
         this.milestoneRepository = milestoneRepository;
     }
@@ -37,18 +41,17 @@ public class MilestoneStateService {
         sm.stopReactively();
 
         sm.getStateMachineAccessor().doWithAllRegions(accessor -> {
+
+            accessor.addStateMachineInterceptor(milestoneInterceptor);
+
             accessor.resetStateMachineReactively(new DefaultStateMachineContext<>(
-                    milestone.getStatus(),
-                    null,
-                    null,
-                    null
+                    milestone.getStatus(), null, null, null
             ));
         });
 
         sm.startReactively();
 
         return sm;
-
     }
 
     public void fireEvent(UUID milestoneId, milestoneEvent event) {

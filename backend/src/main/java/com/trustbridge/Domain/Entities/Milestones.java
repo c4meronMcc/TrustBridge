@@ -31,7 +31,7 @@ public class Milestones extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50 ,nullable = false)
-    private milestoneStatus status =  milestoneStatus.PENDING;
+    private milestoneStatus status =  milestoneStatus.LOCKED;
 
 
 }
