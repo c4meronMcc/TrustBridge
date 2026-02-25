@@ -38,7 +38,7 @@ public class JobStateService {
 
         StateMachine<jobStatus, jobEvent> sm = stateMachineFactory.getStateMachine(jobId.toString());
 
-        sm.stopReactively();
+        sm.stopReactively().block();
 
         sm.getStateMachineAccessor().doWithAllRegions(accessor -> {
 
@@ -46,10 +46,10 @@ public class JobStateService {
 
             accessor.resetStateMachineReactively(new DefaultStateMachineContext<>(
                     job.getStatus(),null,null,null
-            ));
+            )).block();
         });
 
-        sm.startReactively();
+        sm.startReactively().block();
 
         return sm;
     }

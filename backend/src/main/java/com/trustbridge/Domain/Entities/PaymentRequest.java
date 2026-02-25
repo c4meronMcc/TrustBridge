@@ -53,4 +53,12 @@ public class PaymentRequest extends BaseEntity {
     UUID getPaymentLinkTokenInternal() {
         return paymentLinkToken;
     }
+
+    public void transitionToState(PaymentRequestStatus newStatus) {
+        // You can even add a quick safety check here if you want!
+        if (newStatus == null) {
+            throw new IllegalArgumentException("Cannot transition to a null state");
+        }
+        this.status = newStatus;
+    }
 }

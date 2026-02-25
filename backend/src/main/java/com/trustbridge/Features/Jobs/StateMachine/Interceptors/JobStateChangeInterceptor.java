@@ -47,5 +47,4 @@ public class JobStateChangeInterceptor extends StateMachineInterceptorAdapter<jo
             }
         });
     }
-
 }

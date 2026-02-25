@@ -38,7 +38,7 @@ public class MilestoneStateService {
 
         StateMachine<milestoneStatus, milestoneEvent> sm = stateMachineFactory.getStateMachine(milestoneId.toString());
 
-        sm.stopReactively();
+        sm.stopReactively().block();
 
         sm.getStateMachineAccessor().doWithAllRegions(accessor -> {
 
@@ -46,10 +46,10 @@ public class MilestoneStateService {
 
             accessor.resetStateMachineReactively(new DefaultStateMachineContext<>(
                     milestone.getStatus(), null, null, null
-            ));
+            )).block();
         });
 
-        sm.startReactively();
+        sm.startReactively().block();
 
         return sm;
     }

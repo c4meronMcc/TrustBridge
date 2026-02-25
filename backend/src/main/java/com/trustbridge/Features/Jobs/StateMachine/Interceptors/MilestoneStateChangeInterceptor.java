@@ -44,7 +44,6 @@ public class MilestoneStateChangeInterceptor extends StateMachineInterceptorAdap
 
                 System.out.println("Milestone Status Changed From: " + initialState + " to: " + state.getId().name());
             }
-
         });
     }
 }

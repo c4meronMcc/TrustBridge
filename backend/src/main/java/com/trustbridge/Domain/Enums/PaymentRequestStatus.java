@@ -1,11 +1,11 @@
 package com.trustbridge.Domain.Enums;
 
-public class PaymentRequestStatus {
-
-    public enum paymentRequestStatus {
+public enum PaymentRequestStatus {
         PENDING,
+        PROCESSING,
         PAID,
+        FAILED,
         EXPIRED,
-        CANCELED
-    }
+        CANCELLED,
+        REFUNDED
 }
