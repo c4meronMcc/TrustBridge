@@ -2,6 +2,8 @@ package com.trustbridge.Features.Jobs.StateMachine;
 
 import com.trustbridge.Domain.Enums.JobEvent.*;
 import com.trustbridge.Domain.Enums.JobStatus.*;
+import com.trustbridge.Domain.Enums.MilestoneEvent;
+import com.trustbridge.Domain.Enums.MilestoneStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.config.EnableStateMachine;
@@ -52,32 +54,47 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
                 .withExternal()
                 .source(jobStatus.PENDING_ACCEPTANCE).target(jobStatus.AWAITING_PAYMENT)
                 .event(jobEvent.ACCEPT_OFFER)
+                .guard(isClientApprovingGuard())
                 .and()
                 .withExternal()
                 .source(jobStatus.AWAITING_PAYMENT).target(jobStatus.IN_PROGRESS)
                 .event(jobEvent.FUNDS_DEPOSITED)
+                .guard(firstMilestonePaidGuard())
                 .and()
                 .withExternal()
                 .source(jobStatus.IN_PROGRESS).target(jobStatus.SUBMITTED)
                 .event(jobEvent.ALL_MILESTONES_COMPLETED)
+                .guard(allMilestonesCompleted())
                 .and()
                 .withExternal()
                 .source(jobStatus.SUBMITTED).target(jobStatus.APPROVED)
                 .event(jobEvent.JOB_APPROVED)
+                .guard(jobApprovedGuard())
                 .and()
                 .withExternal()
                 .source(jobStatus.APPROVED).target(jobStatus.PAID_OUT)
                 .event(jobEvent.RELEASE_PAYMENT)
+                .guard(jobReleasedGuard())
                 .and()
                 .withExternal()
                 .source(jobStatus.SUBMITTED).target(jobStatus.DISPUTED)
                 .event(jobEvent.RAISE_DISPUTE)
+                .guard(jobDisputedGuard())
                 .and()
                 .withExternal()
                 .source(jobStatus.DISPUTED).target(jobStatus.IN_PROGRESS)
-                .event(jobEvent.RESOLVE_DISPUTE);
+                .event(jobEvent.RESOLVE_DISPUTE)
+                .guard(jobDisputeResolvedGuard());
+    }
 
+    // TODO: Develop all core logic for the guarded states similar to the one below
 
+    @Bean
+    public Guard<jobStatus, jobEvent> isClientApprovingGuard() {
+        return context -> {
+            Boolean isClientApproving = context.getMessageHeaders().get("isClientApproving", Boolean.class);
+            return isClientApproving != null && isClientApproving;
+        };
     }
 
     @Bean
@@ -89,6 +106,46 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
             Boolean isFunded = context.getMessageHeaders().get("isFunded", Boolean.class);
             return sequence != null && sequence == 1
                     && isFunded != null && isFunded;
+        };
+    }
+
+    @Bean
+    public Guard<jobStatus, jobEvent> allMilestonesCompleted() {
+        return context -> {
+            Boolean isAllMilestonesCompleted = (Boolean) context.getMessageHeaders().get("isAllMilestonesCompleted");
+            return isAllMilestonesCompleted != null && isAllMilestonesCompleted;
+        };
+    }
+
+    @Bean
+    public Guard<jobStatus, jobEvent> jobApprovedGuard() {
+        return context -> {
+            Boolean isJobApproved = (Boolean) context.getMessageHeaders().get("isJobApproved");
+            return isJobApproved != null && isJobApproved;
+        };
+    }
+
+    @Bean
+    public Guard<jobStatus, jobEvent> jobReleasedGuard() {
+        return context -> {
+            Boolean isJobReleased = (Boolean) context.getMessageHeaders().get("isJobReleased");
+            return isJobReleased != null && isJobReleased;
+        };
+    }
+
+    @Bean
+    public Guard<jobStatus, jobEvent> jobDisputedGuard() {
+        return context -> {
+            Boolean isJobDisputed = (Boolean) context.getMessageHeaders().get("isJobDisputed");
+            return isJobDisputed != null && isJobDisputed;
+        };
+    }
+
+    @Bean
+    public Guard<jobStatus, jobEvent> jobDisputeResolvedGuard() {
+        return context -> {
+            Boolean isJobDisputeResolved = (Boolean) context.getMessageHeaders().get("isJobDisputeResolved");
+            return isJobDisputeResolved != null && isJobDisputeResolved;
         };
     }
 }
