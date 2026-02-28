@@ -2,11 +2,9 @@ package com.trustbridge.Features.Jobs.StateMachine;
 
 import com.trustbridge.Domain.Enums.JobEvent.*;
 import com.trustbridge.Domain.Enums.JobStatus.*;
-import com.trustbridge.Domain.Enums.MilestoneEvent;
-import com.trustbridge.Domain.Enums.MilestoneStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.statemachine.config.EnableStateMachine;
+import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
@@ -15,7 +13,7 @@ import org.springframework.statemachine.guard.Guard;
 import java.util.EnumSet;
 
 @Configuration
-@EnableStateMachine
+@EnableStateMachineFactory(name = "JobStateMachineFactory")
 public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<jobStatus, jobEvent> {
     @Override
     public void configure(StateMachineStateConfigurer<jobStatus, jobEvent> states) throws Exception {

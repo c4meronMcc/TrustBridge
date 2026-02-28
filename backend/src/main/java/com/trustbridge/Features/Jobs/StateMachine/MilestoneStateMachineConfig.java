@@ -15,7 +15,7 @@ import java.util.EnumSet;
 import java.util.UUID;
 
 @Configuration
-@EnableStateMachineFactory
+@EnableStateMachineFactory(name = "MilestoneStateMachineFactory")
 public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapter<milestoneStatus, milestoneEvent> {
 
     @Override
@@ -67,7 +67,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                 .withExternal()
                 .source(milestoneStatus.APPROVED).target(milestoneStatus.PAID_OUT)
                 .event(milestoneEvent.RELEASE_FUNDS)
-                .guard(isClientApprovingGuard())
+                .guard(isClientApprovingMilestoneGuard())
                 //Submitted -> Dispute (Work Disputed)
                 .and()
                 .withExternal()
@@ -116,7 +116,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     }
 
     @Bean
-    public Guard<milestoneStatus, milestoneEvent> isClientApprovingGuard() {
+    public Guard<milestoneStatus, milestoneEvent> isClientApprovingMilestoneGuard() {
         return context -> {
             Boolean isClientApproving = (Boolean) context.getMessageHeaders().get("isClientApproving");
             System.out.println("Guard executed: " + isClientApproving);

@@ -23,11 +23,11 @@ CREATE TABLE jobs (
       description TEXT,
       total_amount DECIMAL(19, 4) NOT NULL,
       currency VARCHAR(3) NOT NULL DEFAULT 'GBP',
-      currency_code VARCHAR(2) NOT NULL,
       invite_token VARCHAR(64) UNIQUE,
       status VARCHAR(50) DEFAULT 'DRAFT'
-          CHECK (status IN ('DRAFT','PENDING_ACCEPTANCE' ,'ACTIVE', 'COMPLETED', 'CANCELLED')),
-      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+          CHECK (status IN ('DRAFT', 'PENDING_ACCEPTANCE', 'AWAITING_PAYMENT', 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'PAID_OUT', 'DISPUTED', 'CANCELLED')),
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Milestones table
@@ -37,9 +37,10 @@ CREATE TABLE milestones (
     title VARCHAR(255) NOT NULL,
     amount DECIMAL(19, 4) NOT NULL,
     sequence_order INTEGER NOT NULL,
-    status VARCHAR(50) DEFAULT 'PENDING'
-        CHECK (status IN ('PENDING', 'COMPLETE', 'PAID')),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    status VARCHAR(50) DEFAULT 'LOCKED'
+        CHECK (status IN ('LOCKED', 'AWAITING_PAYMENT', 'IN_PROGRESS', 'SUBMITTED', 'APPROVED', 'PAID_OUT', 'DISPUTED_NEGOTIATION', 'DISPUTE_ARBITRATION', 'DISPUTE_RESOLVED', 'CANCELLED')),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Payment Requests table
@@ -47,12 +48,15 @@ CREATE TABLE payment_requests (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       milestone_id uuid NOT NULL REFERENCES milestones(id),
       payment_link_token UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+      stripe_session_id VARCHAR(255),
       amount DECIMAL(19, 4) NOT NULL,
       status VARCHAR(50) DEFAULT 'PENDING'
-          CHECK (status IN ('PENDING', 'PAID', 'EXPIRED', 'CANCELED')),
+          CHECK (status IN ('PENDING', 'PROCESSING', 'PAID', 'FAILED', 'EXPIRED', 'CANCELLED', 'REFUNDED')),
       expires_at TIMESTAMPTZ NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Indexes
 CREATE INDEX idx_payment_requests_token ON payment_requests(payment_link_token);
+CREATE INDEX idx_payment_requests_stripe_session ON payment_requests(stripe_session_id);
