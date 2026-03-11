@@ -5,44 +5,34 @@ export async function POST(req: NextRequest) {
   try {
     const { email, profession } = await req.json();
 
-    // Basic server-side validation
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
-    }
-    if (!profession) {
-      return NextResponse.json({ error: "Profession is required." }, { status: 400 });
-    }
+    // 1. Parse the Secret Key from Vercel Environment Variables
+    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON!);
 
-    // Authenticate with Google using the service account
+    // 2. Initialize Google Auth
     const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      },
+      credentials,
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
     });
 
     const sheets = google.sheets({ version: "v4", auth });
 
-    // Append a new row: [timestamp, email, profession]
+    // 3. Append the data to your Google Sheet
+    // Make sure you have GOOGLE_SHEET_ID in your Vercel Env Variables!
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "Sheet1!A:C",
+      range: "Sheet1!A:B", // Adjust this if your sheet tab is named differently
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [
-          [
-            new Date().toISOString(),
-            email,
-            profession,
-          ],
-        ],
+        values: [[email, profession, new Date().toISOString()]],
       },
     });
 
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (err) {
-    console.error("Waitlist API error:", err);
-    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
+    return NextResponse.json({ message: "Success" }, { status: 200 });
+  } catch (error: any) {
+    console.error("Google Sheets Error:", error);
+    return NextResponse.json(
+      { error: "Failed to join waitlist" },
+      { status: 500 }
+    );
   }
 }
