@@ -93,6 +93,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <StylesProvider>{children}</StylesProvider>
+        <Analytics />
       </body>
     </html>
   )
