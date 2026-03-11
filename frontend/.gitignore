@@ -72,6 +72,10 @@ apps/expo/android
 .turbo
 build/**
 
+.env.local
+.env
+.env.*.local
+
 .pnp.*
 .yarn/*
 !.yarn/patches

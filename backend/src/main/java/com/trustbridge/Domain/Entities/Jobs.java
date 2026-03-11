@@ -35,9 +35,6 @@ public class Jobs extends BaseEntity {
     @Column(name = "currency", length = 3, nullable = false)
     private String currency;
 
-    @Column(name = "currency_code", length = 2, nullable = false)
-    private String countryCode; //TODO: change to currencyCode
-
     // @ManyToOne(fetch = FetchType.LAZY)
     // @Column(name = "provider")
     // private PaymentProvider provider;

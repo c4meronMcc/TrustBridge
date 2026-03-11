@@ -73,7 +73,6 @@ public class JobService {
                 .description(dto.description())
                 .totalAmount(dto.amount())
                 .currency(dto.currency())
-                .countryCode(dto.countryCode())
                 .inviteToken(token)
                 .status(jobStatus.PENDING_ACCEPTANCE)
                 .build();
@@ -111,7 +110,6 @@ public class JobService {
                 .description(dto.description())
                 .totalAmount(dto.amount())
                 .currency(dto.currency())
-                .countryCode(dto.countryCode())
                 .inviteToken(generateInviteToken())
                 .status(jobStatus.DRAFT)
                 .build();
