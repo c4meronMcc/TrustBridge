@@ -17,6 +17,7 @@ const professions = [
   "Other",
 ];
 
+
 export default function Waitlist() {
   const [email, setEmail] = useState("");
   const [profession, setProfession] = useState("");

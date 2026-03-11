@@ -60,7 +60,7 @@ export default function App() {
                         <p className="mb-4">When a Client funds a milestone, TrustBridge automatically routes the transaction via the most appropriate regulated rail:</p>
                         <ul className="list-disc pl-5 ml-[5px] space-y-3 mb-6">
                             <li><strong className="text-[#0B2117]">Under £1,000:</strong> Processed via Stripe (including Apple Pay/Google Pay).</li>
-                            <li><strong className="text-[#0B2117]">£1,000 to £20,000:</strong> Processed via Open Banking (TrueLayer/Pay by Bank) to optimize processing fees.</li>
+                            <li><strong className="text-[#0B2117]">£1,000 to £20,000:</strong> Processed via Open Banking (TrueLayer/Pay by Bank) to optimise processing fees.</li>
                             <li><strong className="text-[#0B2117]">Over £20,000:</strong> Handled entirely via the Escrow.com API, where Escrow.com acts as the regulated fund custodian.</li>
                         </ul>
                         <p>By using TrustBridge, you additionally agree to the respective Terms of Service of these integrated payment partners based on your transaction size.</p>
