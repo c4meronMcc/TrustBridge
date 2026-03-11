@@ -16,6 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "payment_requests")
+@Builder
 public class PaymentRequest extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
