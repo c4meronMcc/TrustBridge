@@ -428,42 +428,30 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <div className="bg-white">
-        <footer className="bg-noise bg-[#0B2117] text-white rounded-t-[2rem] px-6 pt-24 pb-12">
-          <div className="max-w-[48rem] mx-auto text-center mb-20">
-            <h2 className="font-serif text-[clamp(1.75rem,4vw,3rem)] font-medium mb-5">
-              Stop working on a handshake.
-            </h2>
-            <p className="text-white/55 mb-10 leading-[1.7]">
-              Sign up for early access and be first to know when we launch.
-            </p>
-            <Link
-              href="/waitlist"
-              className="inline-flex items-center gap-2 bg-[#1ED760] text-[#0B2117] font-bold px-10 py-4 rounded-xl no-underline text-base"
-            >
-              Join the Waitlist <ArrowRight size={18} />
-            </Link>
-          </div>
+      <div className="bg-white mt-auto">
+        <footer className="bg-[#0B2117] bg-noise text-white pt-12 sm:pt-16 pb-8 sm:pb-12 rounded-t-[2rem]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
 
-          <div className="max-w-[80rem] mx-auto pt-8 border-t border-white/10 flex flex-wrap items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <img src="/TrustBridgeName.png" alt="TrustBridge" className="h-5" />
-              <span className="text-white/50 text-sm ml-2">© 2026 All rights reserved.</span>
+            <div className="flex items-center gap-2 text-white/60 text-sm">
+              <img className="h-4 sm:h-5" src="/TrustBridgeName.png" alt="TrustBridge" />
+              <span className="ml-2">© 2026 All rights reserved.</span>
             </div>
-            <nav className="flex items-center gap-5" aria-label="Footer navigation">
+
+            <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-5" aria-label="Footer navigation">
               <a
                 href="https://x.com/TrusttBridge"
                 aria-label="TrustBridge on X"
                 className="text-white/50 hover:text-white/80 transition-colors"
               >
-                <svg viewBox="0 0 24 24" width={18} height={18} className="fill-current" aria-hidden="true">
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current" aria-hidden="true">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 22.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
               </a>
               <span className="w-px h-4 bg-white/20" aria-hidden="true" />
-              <a href="/privacy" className="text-white/50 text-sm no-underline hover:text-white/80 transition-colors">Privacy Policy</a>
-              <a href="/terms" className="text-white/50 text-sm no-underline hover:text-white/80 transition-colors">Terms of Service</a>
+              <Link href="/privacy" className="text-sm text-white/60 hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="text-sm text-white/60 hover:text-white transition-colors">Terms of Service</Link>
             </nav>
+
           </div>
         </footer>
       </div>
