@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.0",
+    "@vercel/speed-insights": "^2.0.0",
     "app": "*",
     "googleapis": "^171.4.0",
     "lucide-react": "^0.563.0",

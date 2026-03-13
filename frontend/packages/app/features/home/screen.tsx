@@ -363,7 +363,7 @@ export default function HomePage() {
                 Transparent, optimised pricing.
               </h2>
               <p className="text-[#0B2117]/60 text-lg max-w-[42rem] mx-auto leading-[1.6]">
-                No monthly subscriptions. We automatically route your transactions through the cheapest, most secure rail—passing the savings to you.
+                No monthly subscriptions. We automatically route your transactions through the cheapest, most secure rail, passing the savings to you.
               </p>
             </div>
 
