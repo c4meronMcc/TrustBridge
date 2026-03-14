@@ -96,10 +96,10 @@ export default function PrivacyPolicy() {
             <div className="mt-6 sm:mt-8 p-5 sm:p-6 bg-white rounded-2xl border border-black/5 shadow-sm text-center">
               <p className="text-sm sm:text-base mb-2">To exercise any of these rights, please contact us at</p>
               <a
-                href="mailto:hello@trustbridge.co.uk"
+                href="mailto:support@trustbridge.uk"
                 className="font-bold text-[#1ED760] hover:text-[#18B852] transition-colors text-base sm:text-lg inline-block break-all"
               >
-                hello@trustbridge.co.uk
+                support@trustbridge.uk
               </a>
             </div>
           </section>
