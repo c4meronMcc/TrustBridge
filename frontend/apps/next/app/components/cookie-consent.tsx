@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect } from 'react'
+import Clarity from '@microsoft/clarity';
 import * as CookieConsent from 'vanilla-cookieconsent'
 import 'vanilla-cookieconsent/dist/cookieconsent.css'
+
 
 export default function CookieConsentProvider() {
   useEffect(() => {
@@ -98,18 +100,6 @@ export default function CookieConsentProvider() {
 }
 
 function initClarity() {
-  const projectId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID
-  if (!projectId || typeof window === 'undefined') return
-  ;(function (c: any, l: any, a: any, r: any, i: any, t?: any, y?: any) {
-    c[a] =
-      c[a] ||
-      function () {
-        ;(c[a].q = c[a].q || []).push(arguments)
-      }
-    t = l.createElement(r)
-    t.async = 1
-    t.src = 'https://www.clarity.ms/tag/' + i
-    y = l.getElementsByTagName(r)[0]
-    y.parentNode.insertBefore(t, y)
-  })(window, document, 'clarity', 'script', projectId)
+  const  projectId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID
+  Clarity.init(projectId?.toString() || '');
 }

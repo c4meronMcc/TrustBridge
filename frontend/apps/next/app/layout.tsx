@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   description: "TrustBridge secures client funds before you start work and releases payment the moment you finish. Escrow payments built for freelancers, agencies and contractors in the UK.",
 
   // ── CANONICAL URL ──
-  metadataBase: new URL("https://trustbridge.co.uk"),
+  metadataBase: new URL("https://trustbridge.uk"),
   alternates: {
     canonical: "/",
   },
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   // ── OPEN GRAPH (Facebook, LinkedIn previews) ──
   openGraph: {
     type: "website",
-    url: "https://trustbridge.co.uk",
+    url: "https://trustbridge.uk",
     title: "TrustBridge — Escrow Payments for Freelancers",
     description: "Funds secured before you start. Payment released the moment you finish. Never wait for an invoice again.",
     siteName: "TrustBridge",
@@ -98,8 +98,6 @@ export default function RootLayout({
         <Analytics />
         <SpeedInsights />
         <CookieConsentProvider />
-
-        
       </body>
     </html>
   )
