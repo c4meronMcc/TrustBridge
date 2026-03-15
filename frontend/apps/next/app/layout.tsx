@@ -3,6 +3,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import CookieConsentProvider from './components/cookie-consent'
 
 export const metadata: Metadata = {
   // ── TITLES ──
@@ -96,6 +97,9 @@ export default function RootLayout({
         <StylesProvider>{children}</StylesProvider>
         <Analytics />
         <SpeedInsights />
+        <CookieConsentProvider />
+
+        
       </body>
     </html>
   )
