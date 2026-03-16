@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import CookieConsentProvider from './components/cookie-consent'
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 export const metadata: Metadata = {
   // ── TITLES ──
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
   description: "TrustBridge secures client funds before you start work and releases payment the moment you finish. Escrow payments built for freelancers, agencies and contractors in the UK.",
 
   // ── CANONICAL URL ──
-  metadataBase: new URL("https://trustbridge.co.uk"),
+  metadataBase: new URL("https://trustbridge.uk"),
   alternates: {
     canonical: "/",
   },
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
   // ── OPEN GRAPH (Facebook, LinkedIn previews) ──
   openGraph: {
     type: "website",
-    url: "https://trustbridge.co.uk",
+    url: "https://trustbridge.uk",
     title: "TrustBridge — Escrow Payments for Freelancers",
     description: "Funds secured before you start. Payment released the moment you finish. Never wait for an invoice again.",
     siteName: "TrustBridge",
@@ -98,8 +99,7 @@ export default function RootLayout({
         <Analytics />
         <SpeedInsights />
         <CookieConsentProvider />
-
-        
+        <GoogleAnalytics gaId="G-27DS17X5ZD" />
       </body>
     </html>
   )
