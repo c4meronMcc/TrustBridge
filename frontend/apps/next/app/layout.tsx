@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import CookieConsentProvider from './components/cookie-consent'
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 export const metadata: Metadata = {
   // ── TITLES ──
@@ -98,6 +99,7 @@ export default function RootLayout({
         <Analytics />
         <SpeedInsights />
         <CookieConsentProvider />
+        <GoogleAnalytics gaId="G-27DS17X5ZD" />
       </body>
     </html>
   )
