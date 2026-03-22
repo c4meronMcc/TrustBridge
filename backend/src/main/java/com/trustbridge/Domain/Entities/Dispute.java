@@ -9,12 +9,12 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@AllArgsConstructor
-@NoArgsConstructor
 @Getter
 @Setter
-@Table(name = "disputes")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Builder
+@Table(name = "disputes")
 public class Dispute extends BaseEntity {
 
     @Column(nullable = false)
@@ -33,7 +33,6 @@ public class Dispute extends BaseEntity {
     private BigDecimal freelancerProposedAmount;
 
     @Column(nullable = false)
-    @Builder.Default
     private Integer negotiationRound;
 
     @Column(nullable = false)
