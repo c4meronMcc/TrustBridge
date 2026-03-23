@@ -1,5 +1,4 @@
 -- V1__Initial_Schema.sql
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users table
 CREATE TABLE users (
@@ -43,6 +42,15 @@ CREATE TABLE milestones (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE stripe_accounts (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL UNIQUE REFERENCES users(id),
+    stripe_account_id VARCHAR(255) NOT NULL UNIQUE,
+    payouts_enabled BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Payment Requests table
 CREATE TABLE payment_requests (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -60,3 +68,8 @@ CREATE TABLE payment_requests (
 -- Indexes
 CREATE INDEX idx_payment_requests_token ON payment_requests(payment_link_token);
 CREATE INDEX idx_payment_requests_stripe_session ON payment_requests(stripe_session_id);
+CREATE INDEX idx_jobs_freelancer ON jobs(freelancer_id);
+CREATE INDEX idx_jobs_client ON jobs(client_id);
+CREATE INDEX idx_milestones_job ON milestones(job_id);
+CREATE INDEX idx_payment_requests_milestone ON payment_requests(milestone_id);
+CREATE INDEX idx_stripe_accounts_user ON stripe_accounts(user_id);
