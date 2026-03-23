@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface StripeAccountRepository extends JpaRepository<StripeAccount, UUID> {
     Optional<StripeAccount> findByUserId(UUID userId);
+    Optional<Boolean> existsByUserId(UUID userId);
 }
