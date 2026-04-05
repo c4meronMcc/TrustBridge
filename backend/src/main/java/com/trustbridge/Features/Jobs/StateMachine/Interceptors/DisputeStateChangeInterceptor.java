@@ -33,8 +33,8 @@ public class DisputeStateChangeInterceptor extends StateMachineInterceptorAdapte
             UUID disputeId = (UUID) msg.getHeaders().get("disputeId");
 
             if (disputeId != null) {
-                Dispute dispute = disputeRepository.findByJobId(disputeId)
-                        .orElseThrow(() -> new RuntimeException("Milestone not found!"));
+                Dispute dispute = disputeRepository.findById(disputeId)
+                        .orElseThrow(() -> new RuntimeException("Dispute not found!"));
 
                 String initialState = dispute.getState().name();
 

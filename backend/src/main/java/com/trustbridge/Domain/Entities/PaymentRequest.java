@@ -28,6 +28,9 @@ public class PaymentRequest extends BaseEntity {
     @Column(name = "payment_link_token", nullable = false)
     private UUID paymentLinkToken;
 
+    @Column(name = "stripe_session_id")
+    private String stripeSessionId;
+
     @Column(name = "amount", precision = 19, scale = 4, nullable = false)
     private BigDecimal amount;
 

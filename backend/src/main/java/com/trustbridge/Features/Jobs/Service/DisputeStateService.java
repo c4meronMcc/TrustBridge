@@ -33,7 +33,7 @@ public class DisputeStateService {
 
     private StateMachine<DisputeState, DisputeEvent> buildStateMachine(UUID disputeId) {
 
-        Dispute dispute = disputeRepository.findByJobId(disputeId)
+        Dispute dispute = disputeRepository.findById(disputeId)
                 .orElseThrow(() -> new RuntimeException("Dispute not found!"));
 
         StateMachine<DisputeState, DisputeEvent> sm = stateMachineFactory.getStateMachine(disputeId.toString());

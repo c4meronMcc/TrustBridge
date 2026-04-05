@@ -1,9 +1,7 @@
 package com.trustbridge.Domain.Entities;
 
 import com.trustbridge.Domain.Enums.DisputeState;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -20,10 +18,12 @@ public class Dispute extends BaseEntity {
     @Column(nullable = false)
     private DisputeState state;
 
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "job_id", referencedColumnName = "id",nullable = false)
     private Milestones milestone;
 
-    @Column
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "mediator_id", referencedColumnName = "id",nullable = true)
     private Users mediator;
 
     @Column(nullable = false)

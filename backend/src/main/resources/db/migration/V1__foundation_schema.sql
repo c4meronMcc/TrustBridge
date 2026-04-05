@@ -10,7 +10,8 @@ CREATE TABLE users (
        last_name VARCHAR(100) NOT NULL,
        role VARCHAR(50) DEFAULT 'FREELANCER'
            CHECK (role IN ('FREELANCER', 'ADMIN', 'CLIENT', 'CLIENT_GUEST')),
-       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Jobs table
@@ -51,6 +52,14 @@ CREATE TABLE stripe_accounts (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE stripe_customers (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL UNIQUE REFERENCES users(id),
+    stripe_customer_id VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Payment Requests table
 CREATE TABLE payment_requests (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -65,6 +74,28 @@ CREATE TABLE payment_requests (
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE disputes (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    status VARCHAR(50) DEFAULT 'AWAITING_EVIDENCE'
+        CHECK (status IN ('AWAITING_EVIDENCE',
+                          'AWAITING_PROPOSAL',
+                          'AWAITING_DISPUTE_DECISION',
+                          'AWAITING_EXTRA_EVIDENCE',
+                          'UNDER_ARBITRATION',
+                          'RESOLVED_AGREEMENT',
+                          'RESOLVED_ARBITRATED')),
+    milestone_id uuid NOT NULL REFERENCES milestones(id),
+    mediator_id uuid NOT NULL REFERENCES users(id),
+    client_proposed_amount DECIMAL(19, 4) NOT NULL,
+    freelancer_proposed_amount DECIMAL(19, 4) NOT NULL,
+    negotiation_round INTEGER NOT NULL,
+    final_settlement_amount DECIMAL(19, 4) NOT NULL,
+    final_settlement_currency VARCHAR(3) NOT NULL DEFAULT 'GBP',
+    resolution_reason VARCHAR(500) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes
 CREATE INDEX idx_payment_requests_token ON payment_requests(payment_link_token);
 CREATE INDEX idx_payment_requests_stripe_session ON payment_requests(stripe_session_id);
@@ -73,3 +104,4 @@ CREATE INDEX idx_jobs_client ON jobs(client_id);
 CREATE INDEX idx_milestones_job ON milestones(job_id);
 CREATE INDEX idx_payment_requests_milestone ON payment_requests(milestone_id);
 CREATE INDEX idx_stripe_accounts_user ON stripe_accounts(user_id);
+CREATE INDEX idx_stripe_customers_user ON stripe_customers(user_id);

@@ -26,6 +26,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.disable())
                 // 3. Let EVERY request through without logging in
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/webhooks/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().permitAll()
                 );
         return http.build();

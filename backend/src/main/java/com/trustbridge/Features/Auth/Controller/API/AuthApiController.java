@@ -1,8 +1,8 @@
-package com.trustbridge.Features.Auth;
+package com.trustbridge.Features.Auth.Controller.API;
 
 import com.trustbridge.Features.Auth.Dto.LoginDto;
 import com.trustbridge.Features.Auth.Dto.RegistrationDTO;
-import jakarta.servlet.Registration;
+import com.trustbridge.Features.Auth.RegistrationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

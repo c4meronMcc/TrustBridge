@@ -12,6 +12,7 @@ import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.PaymentRequestRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -39,7 +40,7 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String @NonNull ... args) {
         // Only run this if the database is completely empty
         if (paymentRequestRepository.count() == 0) {
             System.out.println("🌱 Database is empty! Seeding test data...");

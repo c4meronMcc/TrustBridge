@@ -16,11 +16,11 @@ import java.math.BigDecimal;
 public class Jobs extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "freelancer_id", nullable = false)
+    @JoinColumn(name = "freelancer_id", referencedColumnName = "id",nullable = false)
     private Users freelancer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id", nullable = true)
+    @JoinColumn(name = "client_id", referencedColumnName = "id",nullable = true)
     private Users client;
 
     @Column(name = "title", length = 255, nullable = false)
@@ -48,5 +48,4 @@ public class Jobs extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private jobStatus status = jobStatus.DRAFT;
-
 }

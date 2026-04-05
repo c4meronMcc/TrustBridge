@@ -13,7 +13,7 @@ import lombok.*;
 public class StripeAccount extends BaseEntity {
 
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_id", table = "users", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     private Users user;
 
     @Column(name = "stripe_account_id", nullable = false, unique = true)
