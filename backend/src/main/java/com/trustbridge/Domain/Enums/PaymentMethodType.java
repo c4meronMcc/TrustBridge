@@ -4,9 +4,8 @@ import java.math.BigDecimal;
 
 public enum PaymentMethodType {
 
-    CARD(BigDecimal.ZERO, new BigDecimal("400")),
-    VIBAN(new BigDecimal("400"), new BigDecimal("20000")),
-    ESCROW(new BigDecimal("20000"), null);
+    STRIPE(BigDecimal.ZERO, new BigDecimal("10000")),
+    ESCROW(new BigDecimal("10000"), null);
 
     private final BigDecimal minAmount;
     private final BigDecimal maxAmount;

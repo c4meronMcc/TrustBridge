@@ -1,11 +1,11 @@
 package com.trustbridge.Features.Payments.Controllers.API;
 
-import com.trustbridge.Domain.Entities.PaymentRequest;
 import com.trustbridge.Features.Payments.Dto.PaymentRequestResponse;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -18,14 +18,15 @@ public class PaymentRequestController {
         this.paymentRequestService = paymentRequestService;
     }
 
-    @PostMapping("/milestone/{milestoneId}")
-    public ResponseEntity<?> createPaymentRequest(@PathVariable UUID milestoneId) {
+    @PostMapping("/initiate")
+    public ResponseEntity<PaymentRequestResponse> initiatePayment(@RequestBody Map<String, String> payload) {
         try {
-            PaymentRequestResponse paymentRequest = paymentRequestService.createPaymentRequest(milestoneId);
-            return ResponseEntity.ok(paymentRequest);
+            UUID milestoneId = UUID.fromString(payload.get("milestoneId"));
+
+            PaymentRequestResponse response = paymentRequestService.createPaymentRequest(milestoneId);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            e.printStackTrace(); // add this
-            return ResponseEntity.badRequest().body("Failed to create payment request: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
         }
     }
 }

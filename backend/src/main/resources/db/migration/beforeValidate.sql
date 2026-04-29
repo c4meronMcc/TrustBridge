@@ -1,8 +1,8 @@
-DROP TABLE IF EXISTS flyway_schema_history;
-DROP TABLE IF EXISTS payment_requests;
-DROP TABLE IF EXISTS disputes;
-DROP TABLE IF EXISTS stripe_accounts;
-DROP TABLE IF EXISTS stripe_customers;
-DROP TABLE IF EXISTS milestones;
-DROP TABLE IF EXISTS jobs;
-DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS flyway_schema_history cascade;
+DROP TABLE IF EXISTS payment_requests cascade;
+DROP TABLE IF EXISTS disputes cascade;
+DROP TABLE IF EXISTS stripe_accounts cascade;
+DROP TABLE IF EXISTS stripe_customers cascade;
+DROP TABLE IF EXISTS milestones cascade;
+DROP TABLE IF EXISTS jobs cascade ;
+DROP TABLE IF EXISTS users cascade;

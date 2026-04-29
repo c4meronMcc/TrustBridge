@@ -14,7 +14,6 @@ import com.trustbridge.Domain.Repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 @Service
 public class StripeConnectService {
