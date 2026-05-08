@@ -49,7 +49,6 @@ public class JobApiController {
         if (client != null && client.getUserRole() != role.CLIENT_GUEST) {
             response.put("status", "EXISTING_USER");
             response.put("email", client.getEmail());
-            // TODO:
         } else {
             response.put("status", "INVITED");
             response.put("email", client != null ? client.getEmail() : null);

@@ -77,6 +77,18 @@ CREATE TABLE payment_requests (
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Stripe Webhook Logs table
+CREATE TABLE stripe_webhook_logs (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    stripe_event_id VARCHAR(255) NOT NULL UNIQUE,
+    event_type VARCHAR(255) NOT NULL,
+    payment_request_id uuid REFERENCES payment_requests(id),
+    processing_status VARCHAR(50) default 'PENDING'
+        CHECK (processing_status IN ('PENDING', 'PROCESSED', 'FAILED', 'IGNORED')),
+    error_message TEXT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Bank Payment Sessions table
 CREATE TABLE bank_payment_sessions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -152,3 +164,4 @@ CREATE INDEX idx_stripe_accounts_user ON stripe_accounts(user_id);
 CREATE INDEX idx_stripe_customers_user ON stripe_customers(user_id);
 CREATE INDEX idx_disputes_milestone ON disputes(milestone_id);
 CREATE INDEX idx_disputes_mediator ON disputes(mediator_id);
+CREATE UNIQUE INDEX idx_stripe_event_id ON stripe_webhook_logs(stripe_event_id);

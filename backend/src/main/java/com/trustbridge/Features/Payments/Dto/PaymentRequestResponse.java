@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public record PaymentRequestResponse(
         UUID paymentRequestId,
-        String paymentType,      //
+        String paymentType,
         String clientSecret,
         String redirectUrl// only present for card payments, null for VIBAN
 ) {

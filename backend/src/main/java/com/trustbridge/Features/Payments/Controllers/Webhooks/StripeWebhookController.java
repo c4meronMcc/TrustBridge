@@ -1,15 +1,20 @@
 package com.trustbridge.Features.Payments.Controllers.Webhooks;
 
+import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.net.Webhook;
 import com.trustbridge.Features.Payments.Service.StripeWebhookService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.stripe.model.Event.*;
 
+@Slf4j
 @RestController
-@RequestMapping("/api/webhooks")
+@RequestMapping("/api/v1/webhooks")
+@RequiredArgsConstructor
 public class StripeWebhookController {
 
     @Value("${stripe.webhook.secret}")
@@ -17,35 +22,37 @@ public class StripeWebhookController {
 
     private final StripeWebhookService stripeWebhookService;
 
-    public StripeWebhookController(StripeWebhookService stripeWebhookService) {
-        this.stripeWebhookService = stripeWebhookService;
-    }
 
-    @PostMapping("/stripe")
-    public ResponseEntity<String> handleStripeWebhook(
+    @PostMapping("/Stripe")
+    public ResponseEntity<String> handleWebhook(
             @RequestBody String payload,
             @RequestHeader("Stripe-Signature") String sigHeader) {
 
+
         Event event;
+
         try {
             event = Webhook.constructEvent(payload, sigHeader, endPointSecret);
-        } catch (Exception e) {
-            System.out.println("Webhook Security Error: " + e.getMessage());
+        } catch (SignatureVerificationException e) {
+            log.error("Webhook Security Error: Invalid Signature - {}", e.getMessage());
             return ResponseEntity.badRequest().body("Signature Verification Failed");
+        } catch (Exception e) {
+            log.error("Webhook Parsing Error: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("Webhook Parsing Failed");
         }
 
-        String rawJson = event.getDataObjectDeserializer().getRawJson();
-        if (rawJson == null) {
-            System.err.println("CRITICAL: Could not deserialize event: " + event.getType());
-            return ResponseEntity.ok().body("Success");
+        log.info("Received Stripe webhook Event: {} (ID: {})", event.getType(), event.getId());
+
+        try {
+            switch (event.getType()) {
+                case "checkout.session.completed" -> stripeWebhookService.handleCheckoutSessionCompleted(event);
+                case "payment_intent.succeeded" -> stripeWebhookService.handlePaymentIntentSucceeded(event);
+                default -> System.out.println("Unhandled event type: " + event.getType());
+            }
+        } catch (Exception e) {
+            log.error("Error processing Stripe webhook Event: {}: {}", event.getId(), e.getMessage());
         }
 
-        switch (event.getType()) {
-            case "checkout.session.completed" -> stripeWebhookService.handleCheckoutSessionCompleted(rawJson);
-            case "payment_intent.succeeded" -> stripeWebhookService.handlePaymentIntentSucceeded(rawJson);
-            default -> System.out.println("Unhandled event type: " + event.getType());
-        }
-
-        return ResponseEntity.ok().body("Success");
+        return ResponseEntity.ok("Success");
     }
 }
