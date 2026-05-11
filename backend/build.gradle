@@ -49,6 +49,8 @@ dependencies {
 	implementation 'org.springframework.statemachine:spring-statemachine-starter:4.0.0'
 	implementation 'org.springframework.statemachine:spring-statemachine-core:3.2.1'
 	implementation 'com.google.code.gson:gson'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'

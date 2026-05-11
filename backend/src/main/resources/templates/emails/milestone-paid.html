@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; color: #333; }
+    .container { max-width: 600px; margin: 40px auto; background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .header { border-bottom: 2px solid #edf2f7; padding-bottom: 20px; margin-bottom: 20px; }
+    .amount { font-size: 28px; color: #28a745; font-weight: bold; margin: 20px 0; }
+    .footer { font-size: 12px; color: #888; text-align: center; margin-top: 40px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <!-- Professional Branding -->
+    <h2>TrustBridge Payments</h2>
+  </div>
+
+  <p>Hi <span th:text="${freelancerName}">Freelancer</span>,</p>
+
+  <p>Great news! The funds for your recent milestone have been successfully released by <strong th:text="${clientName}">the client</strong>.</p>
+
+  <div class="amount">
+    $<span th:text="${amount}">0.00</span> USD
+  </div>
+
+  <p><strong>Milestone:</strong> <span th:text="${milestoneTitle}">Project Setup</span></p>
+
+  <p>The funds are now available in your TrustBridge wallet and can be withdrawn immediately.</p>
+
+  <div class="footer">
+    &copy; 2026 TrustBridge Financial. All rights reserved.
+  </div>
+</div>
+</body>
+</html>

@@ -12,7 +12,7 @@ import com.trustbridge.Domain.Enums.PaymentRequestStatus;
 import com.trustbridge.Domain.Repositories.BankPaymentSessionRepository;
 import com.trustbridge.Domain.Repositories.PaymentRequestRepository;
 import com.trustbridge.Domain.Repositories.StripeCustomerRepository;
-import com.trustbridge.Features.Jobs.Service.EmailService;
+import com.trustbridge.Features.Notifications.Services.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
