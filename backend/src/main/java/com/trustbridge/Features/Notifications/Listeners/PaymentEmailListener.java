@@ -1,6 +1,7 @@
 package com.trustbridge.Features.Notifications.Listeners;
 
 import com.trustbridge.Domain.Entities.Milestones;
+import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Features.Notifications.Services.EmailService;
 import com.trustbridge.Features.Notifications.Services.TemplateEngineService;
@@ -12,7 +13,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -49,6 +49,7 @@ public class PaymentEmailListener {
         paymentEmailService.sendEmail(
                 freelancerEmail,
         "Payment Received",
+                EmailTemplateType.MILESTONE_FUNDED_FREELANCER_NOTICE,
                 htmlBody
         );
 
