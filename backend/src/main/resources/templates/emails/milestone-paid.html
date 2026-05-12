@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="">
 <head>
   <meta charset="UTF-8">
   <style>
@@ -8,7 +8,20 @@
     .header { border-bottom: 2px solid #edf2f7; padding-bottom: 20px; margin-bottom: 20px; }
     .amount { font-size: 28px; color: #28a745; font-weight: bold; margin: 20px 0; }
     .footer { font-size: 12px; color: #888; text-align: center; margin-top: 40px; }
+    .action-button {
+      display: inline-block;
+      background-color: #28a745; /* Dark, sharp contrast */
+      color: #ffffff;
+      text-decoration: none;
+      padding: 14px 28px;
+      border-radius: 9999px; /* Exact pill shape */
+      font-weight: 500;
+      margin-top: 12px;
+      text-align: center;
+      cursor: pointer;
+    }
   </style>
+  <title></title>
 </head>
 <body>
 <div class="container">
@@ -28,6 +41,8 @@
   <p><strong>Milestone:</strong> <span th:text="${milestoneTitle}">Project Setup</span></p>
 
   <p>The funds are now available in your TrustBridge wallet and can be withdrawn immediately.</p>
+
+  <a class="action-button" th:href="@{http://localhost:3000/freelancer/home}">View Funds</a>
 
   <div class="footer">
     &copy; 2026 TrustBridge Financial. All rights reserved.
