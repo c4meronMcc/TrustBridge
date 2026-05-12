@@ -2,11 +2,13 @@ package com.trustbridge.Features.Jobs.Service;
 
 import com.trustbridge.Domain.Entities.Jobs;
 import com.trustbridge.Domain.Entities.Users;
+import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Enums.JobStatus.*;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Auth.RegistrationService;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
+import com.trustbridge.Features.Notifications.Services.EmailService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.scheduling.annotation.Async;
@@ -27,9 +29,7 @@ public class JobService {
     EmailService emailService;
     MilestoneService milestoneService;
 
-    private final String BASE_URL = "https://localhost:8080/invite/";
-
-    public JobService(JobRepository jobRepository, UserRepository userRepository, RegistrationService registrationService,  EmailService emailService,  MilestoneService milestoneService) {
+    public JobService(JobRepository jobRepository, UserRepository userRepository, RegistrationService registrationService, EmailService emailService, MilestoneService milestoneService) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.registrationService = registrationService;
@@ -38,8 +38,9 @@ public class JobService {
     }
 
     @Transactional
-    public String processNewJobOffer(@Valid JobCreationDto dto) {
+    public void processNewJobOffer(@Valid JobCreationDto dto) {
         String token = generateInviteToken();
+        String BASE_URL = "https://localhost:8080/invite/";
         String inviteLink = BASE_URL + token;
 
         Users client = null;
@@ -58,7 +59,6 @@ public class JobService {
             sendNotificationEmail(dto, inviteLink);
         }
 
-        return inviteLink;
     }
 
     @Transactional
@@ -73,7 +73,6 @@ public class JobService {
                 .description(dto.description())
                 .totalAmount(dto.amount())
                 .currency(dto.currency())
-                .countryCode(dto.countryCode())
                 .inviteToken(token)
                 .status(jobStatus.PENDING_ACCEPTANCE)
                 .build();
@@ -81,7 +80,7 @@ public class JobService {
         jobRepository.save(newJob);
 
         if (dto.milestones() != null && !dto.milestones().isEmpty()) {
-            if (!milestoneTotalValid(dto.milestones(), dto)) {
+            if (milestoneTotalValid(dto.milestones(), dto)) {
                 throw new RuntimeException("Milestone total does not equal job amount!");
             }
             milestoneService.createMilestones(newJob ,dto.milestones());
@@ -111,7 +110,6 @@ public class JobService {
                 .description(dto.description())
                 .totalAmount(dto.amount())
                 .currency(dto.currency())
-                .countryCode(dto.countryCode())
                 .inviteToken(generateInviteToken())
                 .status(jobStatus.DRAFT)
                 .build();
@@ -119,7 +117,7 @@ public class JobService {
         jobRepository.save(DraftJob);
 
         if (dto.milestones() != null && !dto.milestones().isEmpty()) {
-            if (!milestoneTotalValid(dto.milestones(), dto)) {
+            if (milestoneTotalValid(dto.milestones(), dto)) {
                 throw new RuntimeException("Milestone total does not equal job amount!");
             }
             milestoneService.createMilestones(DraftJob ,dto.milestones());
@@ -174,19 +172,20 @@ public class JobService {
     /**
      * function to change the status to disputed
      * waiting to update the database before I can uncomment this!**/
-    /*@Transactional
+
+    @Transactional
     public void jobStatusToDisputed(@Valid @RequestBody UUID jobId) {
         Jobs job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found!"));
 
         job.setStatus(jobStatus.DISPUTED);
         jobRepository.save(job);
-    }*/
+    }
 
     @Async
-    private void sendNotificationEmail(JobCreationDto dto, String inviteLink) {
+    protected void sendNotificationEmail(JobCreationDto dto, String inviteLink) {
         String body = buildEmailTemplate(dto, inviteLink);
-        emailService.send(dto.clientEmail(), "Project Proposal: " + dto.title(), body);
+        emailService.sendEmail(dto.clientEmail(), "Project Proposal: " + dto.title(), EmailTemplateType.JOB_INVITATION, body);
         System.out.println("Automated email sent to: " + dto.clientEmail());
     }
 
@@ -197,17 +196,17 @@ public class JobService {
             <html>
             <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px;">
                 <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    
+                   \s
                     <div style="text-align: center; padding-bottom: 20px;">
                         <img src="%s" alt="Logo" height="25" style="height: 25px; width: auto; vertical-align: middle; display: inline-block; border: 0;">
-    
+   \s
                         <span style="font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 26px; font-weight: 700; color: #333333; vertical-align: middle; display: inline-block; letter-spacing: -0.5px;">
                             TrustBridge
                         </span>
                     </div>
-                    
+                   \s
                     <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 0 0 20px 0;">
-                    
+                   \s
                     <h3 style="color: #2c3e50; margin-top: 0;">New Project Proposal</h3>
                     <p style="color: #555555; font-size: 16px; line-height: 1.5;">
                         Hi <strong>%s</strong>,
@@ -215,7 +214,7 @@ public class JobService {
                     <p style="color: #555555; font-size: 16px; line-height: 1.5;">
                         You have received a new proposal for the project <strong>"%s"</strong>.
                     </p>
-                    
+                   \s
                     <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
                         <p style="margin: 5px 0; color: #333;"><strong>Description:</strong> %s</p>
                         <p style="margin: 5px 0; color: #333;"><strong>Total Amount:</strong> %s %.2f</p>
@@ -226,7 +225,7 @@ public class JobService {
                             Review & Accept Proposal
                         </a>
                     </div>
-                    
+                   \s
                     <p style="color: #999999; font-size: 12px; text-align: center; margin-top: 30px;">
                         If the button above doesn't work, copy this link into your browser:<br>
                         <a href="%s" style="color: #007bff; word-break: break-all;">%s</a>
@@ -234,7 +233,7 @@ public class JobService {
                 </div>
             </body>
             </html>
-            """.formatted(
+           \s""".formatted(
                 logoUrl,
                 dto.clientFirstName() != null ? dto.clientFirstName() : "there",
                 dto.title(),
@@ -269,13 +268,14 @@ public class JobService {
         if (!milestoneTotal.equals(job.amount())) {
             System.out.println("Milestone total: " + milestoneTotal);
             System.out.println("Job Amount: " + job.amount());
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     public Jobs checkJobExists(@Valid UUID jobId) {
-        Jobs job = jobRepository.findById(jobId)
+        Jobs job;
+        job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found!"));
 
         return job;

@@ -16,11 +16,11 @@ import java.math.BigDecimal;
 public class Jobs extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "freelancer_id", nullable = false)
+    @JoinColumn(name = "freelancer_id", referencedColumnName = "id",nullable = false)
     private Users freelancer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "client_id", nullable = true)
+    @JoinColumn(name = "client_id", referencedColumnName = "id",nullable = true)
     private Users client;
 
     @Column(name = "title", length = 255, nullable = false)
@@ -35,9 +35,6 @@ public class Jobs extends BaseEntity {
     @Column(name = "currency", length = 3, nullable = false)
     private String currency;
 
-    @Column(name = "currency_code", length = 2, nullable = false)
-    private String countryCode; //TODO: change to currencyCode
-
     // @ManyToOne(fetch = FetchType.LAZY)
     // @Column(name = "provider")
     // private PaymentProvider provider;
@@ -51,5 +48,4 @@ public class Jobs extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private jobStatus status = jobStatus.DRAFT;
-
 }

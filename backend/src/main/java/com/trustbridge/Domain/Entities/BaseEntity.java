@@ -1,9 +1,6 @@
 package com.trustbridge.Domain.Entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,11 +13,15 @@ import java.util.UUID;
 public abstract class BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
     @Column(name = "created_at", updatable = false, nullable = false)
     private OffsetDateTime createdAt;
+
+    @Column(name = "updated_at", updatable = true, nullable = false)
+    private OffsetDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
@@ -28,8 +29,11 @@ public abstract class BaseEntity {
             this.id = UUID.randomUUID();
         }
 
-        if (this.createdAt == null) {
-            this.createdAt = OffsetDateTime.now();
+        OffsetDateTime dateTimeNow = OffsetDateTime.now();
+
+        if (this.createdAt == null &&  this.updatedAt == null) {
+            this.createdAt = dateTimeNow;
+            this.updatedAt = dateTimeNow;
         }
     }
 

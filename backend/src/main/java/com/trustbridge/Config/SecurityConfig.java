@@ -20,13 +20,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(AbstractHttpConfigurer::disable) // Disable CORS too just in case
+                // 1. Disable CSRF security checks completely
+                .csrf(csrf -> csrf.disable())
+                // 2. Disable CORS blocks temporarily
+                .cors(cors -> cors.disable())
+                // 3. Let EVERY request through without logging in
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // temporary: open everything
-                )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
+                        .requestMatchers("/api/webhooks/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .anyRequest().permitAll()
+                );
         return http.build();
     }
 

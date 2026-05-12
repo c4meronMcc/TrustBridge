@@ -1,0 +1,30 @@
+@import "tailwindcss"; 
+@source "../../../packages/app"; 
+
+@theme {
+  --color-primary: #0B1120;
+}
+:root {
+  --background: #0B1120;
+  --foreground: #ffffff;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevents accidental horizontal scroll */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Since you are using Next.js 16, you likely don't need #__next.
+   Instead, apply flex behavior directly to the body or main layout if needed.
+*/
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}

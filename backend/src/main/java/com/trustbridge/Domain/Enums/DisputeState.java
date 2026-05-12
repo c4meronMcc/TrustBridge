@@ -1,0 +1,11 @@
+package com.trustbridge.Domain.Enums;
+
+public enum DisputeState {
+    AWAITING_EVIDENCE,
+    AWAITING_PROPOSAL,
+    AWAITING_DISPUTE_DECISION,
+    AWAITING_EXTRA_EVIDENCE,
+    UNDER_ARBITRATION,
+    RESOLVED_AGREEMENT,
+    RESOLVED_ARBITRATED
+}

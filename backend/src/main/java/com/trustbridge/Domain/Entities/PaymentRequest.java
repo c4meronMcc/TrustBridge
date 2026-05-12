@@ -16,6 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "payment_requests")
+@Builder
 public class PaymentRequest extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,6 +27,12 @@ public class PaymentRequest extends BaseEntity {
     @JsonIgnore
     @Column(name = "payment_link_token", nullable = false)
     private UUID paymentLinkToken;
+
+    @Column(name = "stripe_session_id")
+    private String stripeSessionId;
+
+    @Column(name = "token")
+    private String PaymentLinkToken;
 
     @Column(name = "amount", precision = 19, scale = 4, nullable = false)
     private BigDecimal amount;

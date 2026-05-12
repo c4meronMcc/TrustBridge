@@ -10,5 +10,4 @@ import java.util.UUID;
 public interface MilestoneRepository extends JpaRepository<Milestones, UUID> {
     Optional<Milestones> findByJobId(UUID jobId);
     List<Milestones> findAllByJobId(UUID jobId);
-
 }

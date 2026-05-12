@@ -1,4 +1,4 @@
-package com.trustbridge.Features.Auth;
+package com.trustbridge.Features.Auth.Controller.MVC;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;

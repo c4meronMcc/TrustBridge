@@ -1,5 +1,4 @@
 -- V1__Initial_Schema.sql
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users table
 CREATE TABLE users (
@@ -10,8 +9,9 @@ CREATE TABLE users (
        first_name VARCHAR(100) NOT NULL,
        last_name VARCHAR(100) NOT NULL,
        role VARCHAR(50) DEFAULT 'FREELANCER'
-           CHECK (role IN ('FREELANCER', 'ADMIN', 'CLIENT', 'CLIENT_GUEST')),
-       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+           CHECK (role IN ('FREELANCER', 'ADMIN', 'CLIENT', 'CLIENT_GUEST', 'MEDIATOR')),
+       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Jobs table
@@ -43,12 +43,32 @@ CREATE TABLE milestones (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Stripe accounts table
+CREATE TABLE stripe_accounts (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL UNIQUE REFERENCES users(id),
+    stripe_account_id VARCHAR(255) NOT NULL UNIQUE,
+    payouts_enabled BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Stripe customers table
+CREATE TABLE stripe_customers (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL UNIQUE REFERENCES users(id),
+    stripe_customer_id VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Payment Requests table
 CREATE TABLE payment_requests (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       milestone_id uuid NOT NULL REFERENCES milestones(id),
       payment_link_token UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
       stripe_session_id VARCHAR(255),
+      token VARCHAR(255) UNIQUE,
       amount DECIMAL(19, 4) NOT NULL,
       status VARCHAR(50) DEFAULT 'PENDING'
           CHECK (status IN ('PENDING', 'PROCESSING', 'PAID', 'FAILED', 'EXPIRED', 'CANCELLED', 'REFUNDED')),
@@ -57,6 +77,91 @@ CREATE TABLE payment_requests (
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Stripe Webhook Logs table
+CREATE TABLE stripe_webhook_logs (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    stripe_event_id VARCHAR(255) NOT NULL UNIQUE,
+    event_type VARCHAR(255) NOT NULL,
+    payment_request_id uuid REFERENCES payment_requests(id),
+    processing_status VARCHAR(50) default 'PENDING'
+        CHECK (processing_status IN ('PENDING', 'PROCESSED', 'FAILED', 'IGNORED')),
+    error_message TEXT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Bank Payment Sessions table
+CREATE TABLE bank_payment_sessions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    payment_request_id uuid not null references payment_requests(id),
+    stripe_pi_id VARCHAR(255) NOT NULL UNIQUE, -- Stripe PaymentIntent ID
+    stripe_status VARCHAR(255) NOT NULL,
+    fallback_triggered BOOLEAN DEFAULT FALSE,
+    fallback_trigger_source VARCHAR(50),
+    actual_payment_method VARCHAR(50) DEFAULT 'PAY_BY_BANK'
+                                   CHECK (actual_payment_method IN ('PAY_BY_BANK', 'CARD')),
+    redirect_url TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TYPE email_status AS ENUM ('PENDING', 'SENT', 'DELIVERED', 'FAILED', 'BOUNCED');
+CREATE TYPE email_template_type AS ENUM ('MILESTONE_FUNDING_REQUEST', 'PAYMENT_RECEIPT', 'ESCROW_RELEASED');
+
+CREATE TABLE email_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    recipient_email VARCHAR(255) NOT NULL,
+    template_type email_template_type NOT NULL,
+    related_entity_id UUID NOT NULL,
+    status email_status NOT NULL,
+    provider_message_id TEXT,
+    error_message TEXT,
+    sent_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Bank Payment Audit Log table
+CREATE TABLE bank_payment_audit_log (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    payment_request_id uuid not null references payment_requests(id),
+    event_type VARCHAR(255) NOT NULL,
+    actor_id uuid not null,
+    payload jsonb,
+    ip_address inet,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Disputes table
+CREATE TABLE disputes (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    status VARCHAR(50) DEFAULT 'AWAITING_EVIDENCE'
+        CHECK (status IN ('AWAITING_EVIDENCE',
+                          'AWAITING_PROPOSAL',
+                          'AWAITING_DISPUTE_DECISION',
+                          'AWAITING_EXTRA_EVIDENCE',
+                          'UNDER_ARBITRATION',
+                          'RESOLVED_AGREEMENT',
+                          'RESOLVED_ARBITRATED')),
+    milestone_id uuid NOT NULL REFERENCES milestones(id),
+    mediator_id uuid NOT NULL REFERENCES users(id),
+    client_proposed_amount DECIMAL(19, 4) NOT NULL,
+    freelancer_proposed_amount DECIMAL(19, 4) NOT NULL,
+    negotiation_round INTEGER NOT NULL,
+    final_settlement_amount DECIMAL(19, 4) NOT NULL,
+    final_settlement_currency VARCHAR(3) NOT NULL DEFAULT 'GBP',
+    resolution_reason VARCHAR(500) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes
 CREATE INDEX idx_payment_requests_token ON payment_requests(payment_link_token);
 CREATE INDEX idx_payment_requests_stripe_session ON payment_requests(stripe_session_id);
+CREATE INDEX idx_jobs_freelancer ON jobs(freelancer_id);
+CREATE INDEX idx_jobs_client ON jobs(client_id);
+CREATE INDEX idx_milestones_job ON milestones(job_id);
+CREATE INDEX idx_payment_requests_milestone ON payment_requests(milestone_id);
+CREATE INDEX idx_stripe_accounts_user ON stripe_accounts(user_id);
+CREATE INDEX idx_stripe_customers_user ON stripe_customers(user_id);
+CREATE INDEX idx_disputes_milestone ON disputes(milestone_id);
+CREATE INDEX idx_disputes_mediator ON disputes(mediator_id);
+CREATE UNIQUE INDEX idx_stripe_event_id ON stripe_webhook_logs(stripe_event_id);
