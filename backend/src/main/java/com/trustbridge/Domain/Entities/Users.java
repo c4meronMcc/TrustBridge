@@ -31,4 +31,8 @@ public class Users extends BaseEntity {
     @Column(name = "role", nullable = false)
     private role userRole;
 
+    private String verificationCode;
+
+    private Boolean isVerified;
+
 }
