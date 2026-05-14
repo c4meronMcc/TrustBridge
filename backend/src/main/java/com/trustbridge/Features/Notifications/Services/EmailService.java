@@ -26,16 +26,22 @@ public class EmailService implements EmailSenderServiceImpl {
     @Value("${spring.mail.username}")
     private String senderEmail;
 
+    public EmailService(JavaMailSender mailSender, EmailLogRepository auditLogRepository) {
+        this.mailSender = mailSender;
+        this.auditLogRepository = auditLogRepository;
+    }
+
     @Override
     public void sendEmail(String toAddress, String subject, EmailTemplateType emailTemplateType, String htmlBody) {
 
         log.info("Connecting to SMTP server to send email to: {}", toAddress);
 
-        EmailLog auditlog = EmailLog.builder()
+        EmailLog auditLog = EmailLog.builder()
                 .recipientEmail(toAddress)
                 .subject(subject)
                 .templateType(emailTemplateType)
                 .build();
+
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -49,17 +55,17 @@ public class EmailService implements EmailSenderServiceImpl {
 
             mailSender.send(message);
 
-            auditlog.setStatus(EmailStatus.DELIVERED);
-            auditLogRepository.save(auditlog);
+            auditLog.setStatus(EmailStatus.DELIVERED);
+            auditLogRepository.save(auditLog);
 
             log.info("Email sent successfully to: {}", toAddress);
 
         } catch (Exception e) {
             log.error("Critical SMTP error sending to {}: {}", toAddress, e.getMessage());
 
-            auditlog.setStatus(EmailStatus.FAILED);
-            auditlog.setErrorMessage(e.getMessage());
-            auditLogRepository.save(auditlog);
+            auditLog.setStatus(EmailStatus.FAILED);
+            auditLog.setErrorMessage(e.getMessage());
+            auditLogRepository.save(auditLog);
 
             throw new RuntimeException("Failed to send email: " + e.getMessage());
         }

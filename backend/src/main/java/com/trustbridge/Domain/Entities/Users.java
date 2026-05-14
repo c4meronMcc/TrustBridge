@@ -4,6 +4,8 @@ import com.trustbridge.Domain.Enums.UserRole.*;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.OffsetDateTime;
+
 @Entity
 @Getter @Setter
 @AllArgsConstructor
@@ -30,5 +32,14 @@ public class Users extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private role userRole;
+
+    @Column(name = "verification_code", nullable = true)
+    private String verificationCode;
+
+    @Column(name = "verification_code_expires_at", nullable = true)
+    private OffsetDateTime verificationCodeExpiry;
+
+    @Column(name = "is_verified", nullable = false)
+    private Boolean isVerified;
 
 }

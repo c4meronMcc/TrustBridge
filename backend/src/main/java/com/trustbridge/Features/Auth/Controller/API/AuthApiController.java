@@ -2,6 +2,7 @@ package com.trustbridge.Features.Auth.Controller.API;
 
 import com.trustbridge.Features.Auth.Dto.LoginDto;
 import com.trustbridge.Features.Auth.Dto.RegistrationDTO;
+import com.trustbridge.Features.Auth.Dto.RegistrationVerificationDTO;
 import com.trustbridge.Features.Auth.RegistrationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,11 +24,15 @@ public class AuthApiController {
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@Valid @RequestBody RegistrationDTO dto) {
-        registrationService.register(dto);
+        registrationService.registerPreVerification(dto);
         return ResponseEntity.ok("User registered successfully!");
     }
 
-
+    @PostMapping("/verificationCode")
+    public ResponseEntity<String> verifyCode(@Valid @RequestBody RegistrationVerificationDTO dto) {
+        registrationService.registerPostVerification(dto);
+        return ResponseEntity.ok("User verified successfully!");
+    }
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@Valid @RequestBody LoginDto dto) {

@@ -8,6 +8,7 @@ import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Enums.StripeWebhookProcessingStatus;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.StripeWebhookLogsRepository;
+import com.trustbridge.Features.Notifications.Listeners.PaymentEmailListener;
 import com.trustbridge.Features.Payments.Events.MilestoneFundedEvent;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class StripeWebhookService {
     private final StripeWebhookLogsRepository webhookLogsRepository;
     private final MilestoneRepository milestoneRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final PaymentEmailListener paymentEmailListener;
 
     @Transactional
     public void handlePaymentIntentSucceeded(Event event) {
@@ -64,7 +66,9 @@ public class StripeWebhookService {
                 milestoneRepository.save(milestone);
                 log.info("Milestone {} successfully updated to PAID.", milestoneId);
 
-                eventPublisher.publishEvent(new MilestoneFundedEvent(this, milestoneId));
+                MilestoneFundedEvent milestoneFundedEvent = new MilestoneFundedEvent(this, milestoneId);
+
+                paymentEmailListener.onMilestoneFunded(milestoneFundedEvent);
             }
 
             saveAuditLog(eventId, event.getType(), "PROCESSED", null);
