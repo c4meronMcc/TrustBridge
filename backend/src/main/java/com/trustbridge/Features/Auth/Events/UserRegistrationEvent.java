@@ -1,7 +1,9 @@
 package com.trustbridge.Features.Auth.Events;
 
-import java.util.UUID;
+import java.time.OffsetDateTime;
 
 public record UserRegistrationEvent(
-    String email
+    String email,
+    String firstName,
+    String verificationCode
 ) { }

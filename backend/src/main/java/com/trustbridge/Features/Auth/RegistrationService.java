@@ -4,11 +4,20 @@ import com.trustbridge.Domain.Entities.Users;
 import com.trustbridge.Domain.Enums.UserRole.*;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Auth.Dto.RegistrationDTO;
+import com.trustbridge.Features.Auth.Dto.RegistrationVerificationDTO;
+import com.trustbridge.Features.Auth.Events.UserRegistrationEvent;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
+import com.trustbridge.Features.Notifications.Listeners.AuthEmail;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.time.OffsetDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -16,14 +25,22 @@ public class RegistrationService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SecureRandom random = new SecureRandom();
+    private final AuthEmail authEmail;
+    private final ApplicationEventPublisher eventPublisher;
+
+    public String VerificationCode() {
+        int verificationCode = random.nextInt(999999) + 1;
+
+        return String.format("%06d", verificationCode);
+    };
 
     @Transactional
-    public void register(RegistrationDTO dto) {
+    public void registerPreVerification(RegistrationDTO dto) {
 
         if (userRepository.findByEmail(dto.email()).isPresent()) {
             throw new RuntimeException("Email already in use");
         }
-
 
         Users newUser = Users.builder()
                 .email(dto.email())
@@ -31,9 +48,71 @@ public class RegistrationService {
                 .firstName(dto.firstName())
                 .lastName(dto.lastName())
                 .userRole(dto.role())
+                .verificationCode(VerificationCode())
+                .isVerified(false)
+                .verificationCodeExpiry(OffsetDateTime.now().plusMinutes(15))
                 .build();
 
         userRepository.save(newUser);
+
+        UserRegistrationEvent event = new UserRegistrationEvent(
+                newUser.getEmail(),
+                newUser.getFirstName(),
+                newUser.getVerificationCode()
+        );
+
+        eventPublisher.publishEvent(event);
+    }
+
+    @Transactional
+    public void registerPostVerification(RegistrationVerificationDTO dto) {
+
+        Users user = userRepository.findByEmail(dto.email())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (Boolean.TRUE.equals(user.getIsVerified())) {
+            throw new IllegalStateException("User is already verified");
+        }
+
+        boolean isCodeNull = user.getVerificationCode() == null;
+        boolean isCodeExpired = user.getVerificationCodeExpiry() != null &&
+                user.getVerificationCodeExpiry().isBefore(OffsetDateTime.now());
+
+        boolean isCodeInvalid = isCodeNull || !MessageDigest.isEqual(
+                user.getVerificationCode().getBytes(StandardCharsets.UTF_8),
+                dto.verificationCode().getBytes(StandardCharsets.UTF_8)
+        );
+
+        if (isCodeNull || isCodeExpired || isCodeInvalid) {
+            throw new IllegalArgumentException("The verification code is incorrect or expired.");
+        }
+
+        user.setIsVerified(true);
+        user.setVerificationCode(null);
+        user.setVerificationCodeExpiry(null);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void resetVerificationCode(String email) {
+        Users user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (Boolean.TRUE.equals(user.getIsVerified())) {
+            throw new IllegalStateException("User is already verified");
+        }
+
+        user.setVerificationCode(VerificationCode());
+        user.setVerificationCodeExpiry(OffsetDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        UserRegistrationEvent event = new UserRegistrationEvent(
+                user.getEmail(),
+                user.getFirstName(),
+                user.getVerificationCode()
+        );
+
+        eventPublisher.publishEvent(event);
     }
 
     public void ensureClientExists(String email, JobCreationDto dto) {
@@ -42,6 +121,7 @@ public class RegistrationService {
             createGuestUser(dto);
         }
     }
+
 
     @Transactional
     public Users createGuestUser(JobCreationDto dto) {

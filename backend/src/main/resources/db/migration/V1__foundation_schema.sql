@@ -10,6 +10,9 @@ CREATE TABLE users (
        last_name VARCHAR(100) NOT NULL,
        role VARCHAR(50) DEFAULT 'FREELANCER'
            CHECK (role IN ('FREELANCER', 'ADMIN', 'CLIENT', 'CLIENT_GUEST', 'MEDIATOR')),
+       verification_code VARCHAR(64),
+       verification_code_expires_at TIMESTAMPTZ,
+       is_verified BOOLEAN DEFAULT FALSE,
        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
