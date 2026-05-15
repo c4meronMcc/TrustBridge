@@ -41,5 +41,4 @@ public class Users extends BaseEntity {
 
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified;
-
 }
