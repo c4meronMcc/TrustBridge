@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Profile("dev")
 @RequiredArgsConstructor
-public class MockEmailServiceImpl implements EmailSenderServiceImpl {
+public class MockEmailServiceImpl implements EmailSenderService {
 
     private final EmailLogRepository auditLogRepository;
 

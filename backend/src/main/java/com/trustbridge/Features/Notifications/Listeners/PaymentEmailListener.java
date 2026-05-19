@@ -3,7 +3,7 @@ package com.trustbridge.Features.Notifications.Listeners;
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
-import com.trustbridge.Features.Notifications.Services.EmailService;
+import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Notifications.Services.TemplateEngineService;
 import com.trustbridge.Features.Payments.Events.MilestoneFundedEvent;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.util.Map;
 public class PaymentEmailListener {
 
     private final MilestoneRepository milestoneRepository;
-    private final EmailService paymentEmailService;
+    private final EmailServiceImpl paymentEmailServiceImplImpl;
     private final TemplateEngineService templateEngineService;
 
     /**
@@ -46,7 +46,7 @@ public class PaymentEmailListener {
 
         String htmlBody = templateEngineService.processTemplate("milestone-paid.html", emailData);
 
-        paymentEmailService.sendEmail(
+        paymentEmailServiceImplImpl.sendEmail(
                 freelancerEmail,
         "Payment Received",
                 EmailTemplateType.MILESTONE_FUNDED_FREELANCER_NOTICE,

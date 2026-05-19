@@ -12,7 +12,7 @@ import com.trustbridge.Domain.Enums.PaymentRequestStatus;
 import com.trustbridge.Domain.Repositories.BankPaymentSessionRepository;
 import com.trustbridge.Domain.Repositories.PaymentRequestRepository;
 import com.trustbridge.Domain.Repositories.StripeCustomerRepository;
-import com.trustbridge.Features.Notifications.Services.EmailService;
+import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ import java.util.Optional;
 public class StripePaymentService {
 
     private final StripeCustomerRepository stripeCustomerRepository;
-    private final EmailService emailService;
+    private final EmailServiceImpl emailServiceImpl;
     private final PaymentRequestRepository paymentRequestRepository; // 2. ADDED 'final'
     private final BankPaymentSessionRepository bankPaymentSessionRepository;
 

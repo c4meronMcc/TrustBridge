@@ -8,7 +8,7 @@ import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Auth.RegistrationService;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
-import com.trustbridge.Features.Notifications.Services.EmailService;
+import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.scheduling.annotation.Async;
@@ -26,14 +26,14 @@ public class JobService {
     JobRepository jobRepository;
     UserRepository userRepository;
     RegistrationService registrationService;
-    EmailService emailService;
+    EmailServiceImpl emailServiceImpl;
     MilestoneService milestoneService;
 
-    public JobService(JobRepository jobRepository, UserRepository userRepository, RegistrationService registrationService, EmailService emailService, MilestoneService milestoneService) {
+    public JobService(JobRepository jobRepository, UserRepository userRepository, RegistrationService registrationService, EmailServiceImpl emailServiceImpl, MilestoneService milestoneService) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.registrationService = registrationService;
-        this.emailService = emailService;
+        this.emailServiceImpl = emailServiceImpl;
         this.milestoneService = milestoneService;
     }
 
@@ -185,7 +185,7 @@ public class JobService {
     @Async
     protected void sendNotificationEmail(JobCreationDto dto, String inviteLink) {
         String body = buildEmailTemplate(dto, inviteLink);
-        emailService.sendEmail(dto.clientEmail(), "Project Proposal: " + dto.title(), EmailTemplateType.JOB_INVITATION, body);
+        emailServiceImpl.sendEmail(dto.clientEmail(), "Project Proposal: " + dto.title(), EmailTemplateType.JOB_INVITATION, body);
         System.out.println("Automated email sent to: " + dto.clientEmail());
     }
 

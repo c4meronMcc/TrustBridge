@@ -16,20 +16,15 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-@Profile("prod")
+@Profile("!prod")
 @RequiredArgsConstructor
-public class EmailService implements EmailSenderServiceImpl {
+public class EmailServiceImpl implements EmailSenderService {
 
     private JavaMailSender mailSender;
     private EmailLogRepository auditLogRepository;
 
     @Value("${spring.mail.username}")
     private String senderEmail;
-
-    public EmailService(JavaMailSender mailSender, EmailLogRepository auditLogRepository) {
-        this.mailSender = mailSender;
-        this.auditLogRepository = auditLogRepository;
-    }
 
     @Override
     public void sendEmail(String toAddress, String subject, EmailTemplateType emailTemplateType, String htmlBody) {
