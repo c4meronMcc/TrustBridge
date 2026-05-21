@@ -4,7 +4,7 @@ import com.trustbridge.Domain.Entities.Users;
 import com.trustbridge.Domain.Enums.UserRole;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Auth.Dto.RegistrationDTO;
-import com.trustbridge.Features.Auth.RegistrationService;
+import com.trustbridge.Features.Auth.Service.RegistrationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,11 +39,12 @@ class RegistrationServiceTest {
     @BeforeEach
     void setUp() {
         validRegistrationDTO = new RegistrationDTO(
-                "test@example.com",
-                "password123",
-                "John",
-                "Doe",
-                UserRole.role.FREELANCER
+                "test@test.com",
+                "07494874632",
+                "password123!",
+                "test",
+                "test",
+                "freelancer"
         );
     }
 
@@ -56,7 +57,7 @@ class RegistrationServiceTest {
         ArgumentCaptor<Users> userCaptor = ArgumentCaptor.forClass(Users.class);
 
         // Act
-        registrationService.register(validRegistrationDTO);
+        registrationService.registerPreVerification(validRegistrationDTO);
 
         // Assert
         verify(userRepository).findByEmail(validRegistrationDTO.email());
@@ -82,7 +83,7 @@ class RegistrationServiceTest {
                 .thenReturn(Optional.of(existingUser));
 
         // Act & Assert
-        assertThatThrownBy(() -> registrationService.register(validRegistrationDTO))
+        assertThatThrownBy(() -> registrationService.registerPreVerification(validRegistrationDTO))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Email already in use");
 
@@ -99,10 +100,11 @@ class RegistrationServiceTest {
 
         RegistrationDTO dto = new RegistrationDTO(
                 "newuser@example.com",
+                "07563928573",
                 rawPassword,
-                "Jane",
-                "Smith",
-                UserRole.role.ADMIN
+                "test",
+                "test",
+                "client"
         );
 
         when(userRepository.findByEmail(dto.email())).thenReturn(Optional.empty());
@@ -111,7 +113,7 @@ class RegistrationServiceTest {
         ArgumentCaptor<Users> userCaptor = ArgumentCaptor.forClass(Users.class);
 
         // Act
-        registrationService.register(dto);
+        registrationService.registerPreVerification(dto);
 
         // Assert
         verify(passwordEncoder).encode(rawPassword);
@@ -127,10 +129,11 @@ class RegistrationServiceTest {
         // Arrange
         RegistrationDTO dto = new RegistrationDTO(
                 "complete@example.com",
-                "securePassword",
-                "Alice",
-                "Johnson",
-                UserRole.role.CLIENT
+                "07465827465",
+                "testpassword!!11",
+                "test",
+                "test",
+                "client"
         );
 
         when(userRepository.findByEmail(dto.email())).thenReturn(Optional.empty());
@@ -139,7 +142,7 @@ class RegistrationServiceTest {
         ArgumentCaptor<Users> userCaptor = ArgumentCaptor.forClass(Users.class);
 
         // Act
-        registrationService.register(dto);
+        registrationService.registerPreVerification(dto);
 
         // Assert
         verify(userRepository).save(userCaptor.capture());
@@ -156,10 +159,11 @@ class RegistrationServiceTest {
         // Arrange
         RegistrationDTO adminDto = new RegistrationDTO(
                 "admin@example.com",
-                "adminPass",
-                "Admin",
-                "User",
-                UserRole.role.ADMIN
+                "07357365478",
+                "testpassword123!",
+                "test",
+                "test",
+                "admin"
         );
 
         when(userRepository.findByEmail(adminDto.email())).thenReturn(Optional.empty());
@@ -168,7 +172,7 @@ class RegistrationServiceTest {
         ArgumentCaptor<Users> userCaptor = ArgumentCaptor.forClass(Users.class);
 
         // Act
-        registrationService.register(adminDto);
+        registrationService.registerPreVerification(adminDto);
 
         // Assert
         verify(userRepository).save(userCaptor.capture());

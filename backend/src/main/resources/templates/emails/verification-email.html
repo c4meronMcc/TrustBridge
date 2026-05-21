@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your TrustBridge Verification Code</title>
+  <style>
+    /* Reset styles for email clients */
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    table { border-collapse: collapse !important; }
+    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+  </style>
+</head>
+<body style="background-color: #f0f2f0; margin: 0 !important; padding: 0 !important;">
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f0f2f0;">
+  <tr>
+    <td align="center" style="padding: 40px 15px 40px 15px;">
+
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+
+        <tr>
+          <td align="center" style="padding: 30px 30px 20px 30px; border-bottom: 1px solid #eeeeee;">
+            <table border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background-color: #0F5525; border-radius: 8px; width: 34px; height: 34px; text-align: center; vertical-align: middle;">
+                  <span style="color: #3FCD6B; font-weight: bold; font-size: 16px; letter-spacing: -0.5px;">TB</span>
+                </td>
+                <td style="padding-left: 10px;">
+                  <span style="color: #0F5525; font-size: 20px; font-weight: 600; letter-spacing: -0.01em;">TrustBridge</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding: 30px 30px 35px 30px;">
+            <h1 style="color: #111111; font-size: 22px; font-weight: 600; margin: 0 0 15px 0;">Verify your email</h1>
+
+            <p style="color: #555555; font-size: 15px; line-height: 24px; margin: 0 0 25px 0;">
+              Hi <span th:text="${firstName}">User</span>,<br><br>
+
+              To complete your sign-up for your new <strong th:text="${#strings.toLowerCase(accountType)}">freelancer</strong> account and secure your data, please enter the following 6-digit verification code.
+            </p>
+
+            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td align="center" style="background-color: #f0fdf5; border: 1px solid #3FCD6B; border-radius: 8px; padding: 24px;">
+                  <span th:text="${verification}" style="color: #111111; font-size: 34px; font-weight: 600; letter-spacing: 6px;">000000</span>
+                </td>
+              </tr>
+            </table>
+
+            <p style="color: #888888; font-size: 13px; line-height: 20px; margin: 25px 0 0 0;">
+              This code will expire in <strong>15 minutes</strong>. If you did not request this email, please ignore it or contact our support team.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td align="center" style="padding: 24px 30px; background-color: #fafafa; border-top: 1px solid #eeeeee;">
+            <p style="color: #aaaaaa; font-size: 12px; line-height: 18px; margin: 0;">
+              &copy; 2026 TrustBridge Ltd.<br>
+              Secure payments for freelancers and contractors.<br><br>
+              <a href="#" style="color: #0F5525; text-decoration: none; font-weight: 500;">Support Center</a> &nbsp;&bull;&nbsp; <a href="#" style="color: #0F5525; text-decoration: none; font-weight: 500;">Privacy Policy</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

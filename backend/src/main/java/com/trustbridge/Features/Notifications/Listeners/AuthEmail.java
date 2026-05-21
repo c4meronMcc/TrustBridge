@@ -37,7 +37,7 @@ public class AuthEmail {
                 "verification", user.getVerificationCode()
         );
 
-        String htmlBody = templateEngineService.processTemplate("example.html", emailData);
+        String htmlBody = templateEngineService.processTemplate("verification-email.html", emailData);
 
         emailSenderService.sendEmail(
                 userEmail,

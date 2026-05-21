@@ -17,32 +17,42 @@ export default function TrustBridgeLogin() {
     const router = useRouter();
     const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-    const tryLogin = () => {
-        if (!email || !password) {
+    const tryLogin = async () => {
+        const payload = {
+            email: email,
+            password: password
+        };
+
+        try {
+            // 4. Send to Spring Boot
+            const response = await fetch('http://localhost:8080/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                // Throw the error returned by Spring Boot's validation
+                throw new Error(data.message || 'Registration failed. Please check your details.');
+            }
+
+            // 5. Success! Move to 2FA panel
+
+            window.location.href = '/dashboard/freelancer';
+        } catch (error: any) {
+            console.error("Signup Error:", error);
+            // You can use a dedicated state for server errors if you want to display the specific message
             setShowError(true);
-            return;
         }
-        setShowError(false);
-        setActivePanel('2fa');
     };
 
     const handleSuccess = () => {
         setActivePanel('success');
         setTimeout(() => setRedirectProgress(100), 100);
-    };
-
-    const handleOtpChange = (e: ChangeEvent<HTMLInputElement>, index: number) => {
-        const value = e.target.value;
-        const newOtp = [...otp];
-        newOtp[index] = value;
-        setOtp(newOtp);
-        if (value && index < 5) otpRefs.current[index + 1]?.focus();
-    };
-
-    const handleOtpKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
-        if (e.key === 'Backspace' && !otp[index] && index > 0) {
-            otpRefs.current[index - 1]?.focus();
-        }
     };
 
     return (
@@ -143,52 +153,6 @@ export default function TrustBridgeLogin() {
                         </div>
                     )}
 
-
-                    {/* ══════════════════════════════
-                        2FA PANEL
-                    ══════════════════════════════ */}
-                    {activePanel === '2fa' && (
-                        <div>
-                            <div className="pt-6 px-6 pb-4 md:pt-7.5 md:px-7 md:pb-4.5">
-                                <div className="text-[19px] font-semibold text-[#111] mb-1">Two-step verification</div>
-                                <div className="text-[13px] text-[#777]">Confirm it&#39;s you to keep your account secure</div>
-                            </div>
-
-                            <div className="px-6 pb-6 md:px-7 md:pb-7">
-                                <div className="text-center mb-4">
-                                    <div className="w-11 h-11 rounded-full bg-[#E1F5EE] flex items-center justify-center mx-auto mb-2.5">
-                                        <i className="ti ti-device-mobile text-[20px] text-[#0F5525]"></i>
-                                    </div>
-                                    <div className="text-[12px] text-[#777] leading-relaxed">
-                                        Enter the 6-digit code from your authenticator app or sent to <strong className="text-[#111]">+44 •••• ••7821</strong>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-6 gap-1.5 my-3">
-                                    {otp.map((digit, index) => (
-                                        <input key={index} ref={el => { otpRefs.current[index] = el; }} maxLength={1} value={digit}
-                                               onChange={e => handleOtpChange(e, index)}
-                                               onKeyDown={e => handleOtpKeyDown(e, index)}
-                                               className={`w-full aspect-square text-center text-[18px] font-medium border rounded-lg outline-none transition-all focus:border-[#3FCD6B] focus:ring-[3px] focus:ring-[#3FCD6B]/10 ${digit ? 'border-[#3FCD6B] bg-[#f0fdf5]' : 'border-[#dde3e0] bg-white'}`} />
-                                    ))}
-                                </div>
-
-                                <div className="text-[11px] text-[#bbb] text-center mb-4">
-                                    Didn&#39;t receive a code? <span className="text-[#0F5525] cursor-pointer font-medium hover:underline">Resend</span>
-                                </div>
-
-                                <button onClick={handleSuccess} className="w-full bg-[#0F5525] text-white rounded-lg p-2.5 text-[13px] font-medium flex items-center justify-center gap-1.5 transition-colors hover:bg-[#3FCD6B]">
-                                    <i className="ti ti-shield-check text-[14px]"></i> Verify &amp; sign in
-                                </button>
-
-                                <div onClick={() => setActivePanel('login')} className="text-[12px] text-[#aaa] cursor-pointer flex items-center gap-1 mt-3.5 justify-center transition-colors hover:text-[#3FCD6B]">
-                                    <i className="ti ti-arrow-left text-[13px]"></i> Back to login
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-
                     {/* ══════════════════════════════
                         SUCCESS PANEL
                     ══════════════════════════════ */}
@@ -211,67 +175,6 @@ export default function TrustBridgeLogin() {
                             </div>
                         </div>
                     )}
-
-
-                    {/* ══════════════════════════════
-                        MAGIC LINK PANEL
-                    ══════════════════════════════ */}
-                    {activePanel === 'magic' && (
-                        <div>
-                            <div className="pt-6 px-6 pb-4 md:pt-7.5 md:px-7 md:pb-4.5">
-                                <div className="text-[19px] font-semibold text-[#111] mb-1">Magic link login</div>
-                                <div className="text-[13px] text-[#777]">Get a one-click login link sent to your email</div>
-                            </div>
-
-                            <div className="px-6 pb-6 md:px-7 md:pb-7">
-                                <div className="w-11 h-11 rounded-full bg-[#E1F5EE] flex items-center justify-center mx-auto mb-4">
-                                    <i className="ti ti-mail-forward text-[20px] text-[#0F5525]"></i>
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-[12px] font-medium text-[#333] mb-1.5">Email address</label>
-                                    <input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)}
-                                           className="w-full text-[13px] py-2 px-3 rounded-lg border border-[#dde3e0] bg-white text-[#111] outline-none transition-all focus:border-[#3FCD6B] focus:ring-[3px] focus:ring-[#3FCD6B]/10" />
-                                    <div className="text-[11px] text-[#999] mt-1">We&#39;ll send a secure one-click login link to this address.</div>
-                                </div>
-
-                                <button onClick={() => setActivePanel('magic-sent')} className="w-full bg-[#0F5525] text-white rounded-lg p-2.5 text-[13px] font-medium flex items-center justify-center gap-1.5 transition-colors hover:bg-[#3FCD6B]">
-                                    <i className="ti ti-send text-[14px]"></i> Send magic link
-                                </button>
-
-                                <div onClick={() => setActivePanel('login')} className="text-[12px] text-[#aaa] cursor-pointer flex items-center gap-1 mt-3.5 justify-center transition-colors hover:text-[#3FCD6B]">
-                                    <i className="ti ti-arrow-left text-[13px]"></i> Back to login
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-
-                    {/* ══════════════════════════════
-                        MAGIC LINK SENT PANEL
-                    ══════════════════════════════ */}
-                    {activePanel === 'magic-sent' && (
-                        <div>
-                            <div className="pt-6 px-6 pb-4 md:pt-7.5 md:px-7 md:pb-4.5">
-                                <div className="text-[19px] font-semibold text-[#111] mb-1">Check your inbox</div>
-                                <div className="text-[13px] text-[#777]">Your magic link is on its way</div>
-                            </div>
-
-                            <div className="px-6 pb-6 md:px-7 md:pb-7 text-center">
-                                <div className="w-12 h-12 rounded-full bg-[#E1F5EE] flex items-center justify-center mx-auto mb-3.5 mt-2">
-                                    <i className="ti ti-mail-check text-[24px] text-[#0F5525]"></i>
-                                </div>
-                                <div className="text-[12px] text-[#888] leading-relaxed">
-                                    A link has been sent to <strong className="text-[#111]">{email}</strong>. It expires in 15 minutes.
-                                </div>
-
-                                <div onClick={() => setActivePanel('login')} className="text-[12px] text-[#aaa] cursor-pointer flex items-center gap-1 mt-5 justify-center transition-colors hover:text-[#3FCD6B]">
-                                    <i className="ti ti-arrow-left text-[13px]"></i> Back to login
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
 
                     {/* ══════════════════════════════
                         FORGOT PASSWORD PANEL

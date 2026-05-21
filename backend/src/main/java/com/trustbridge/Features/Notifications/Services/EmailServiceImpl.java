@@ -20,8 +20,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailSenderService {
 
-    private JavaMailSender mailSender;
-    private EmailLogRepository auditLogRepository;
+    private final JavaMailSender mailSender;
+    private final EmailLogRepository auditLogRepository;
 
     @Value("${spring.mail.username}")
     private String senderEmail;
@@ -62,7 +62,7 @@ public class EmailServiceImpl implements EmailSenderService {
             auditLog.setErrorMessage(e.getMessage());
             auditLogRepository.save(auditLog);
 
-            throw new RuntimeException("Failed to send email: " + e.getMessage());
+            throw new RuntimeException("Failed to send email: " + e.getMessage() + " Failed to log auditLog");
         }
     }
 }

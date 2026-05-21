@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useRef, KeyboardEvent } from 'react';
+import React, {useState} from 'react';
 import {useRouter} from "next/navigation";
 
-type PanelState = 'login' | '2fa' | 'success' | 'magic' | 'magic-sent' | 'forgot';
+type PanelState = 'login' | '2fa' | 'success' | 'forgot';
 
 const inputCls =
     "w-full text-[13px] py-1.5 px-2.5 rounded-lg border border-[#dde3e0] bg-white text-[#111] outline-none transition-all focus:border-[#3FCD6B] focus:ring-[3px] focus:ring-[#3FCD6B]/10";
@@ -24,15 +24,6 @@ export default function TrustBridgeSignUp() {
 
     const route = useRouter();
 
-    const trySignUp = () => {
-        if (!email || !password || !firstName || !lastName || !phone || password !== confirmPassword) {
-            setShowError(true);
-            return;
-        }
-        setShowError(false);
-        setActivePanel('2fa');
-    };
-
     const handleSuccess = () => {
         setActivePanel('success');
         setTimeout(() => setRedirectProgress(100), 100);
@@ -41,6 +32,55 @@ export default function TrustBridgeSignUp() {
     const handleRedirectLogin = () => {
         route.push('/login');
     }
+
+    const handleSignUpSubmit = async () => {
+        // 1. Basic frontend validation
+        if (!email || !password || !firstName || !lastName || !phone || password !== confirmPassword) {
+            setShowError(true);
+            return;
+        }
+        setShowError(false);
+
+        // 2. Clean the phone number (removes spaces so "07700 900000" becomes "07700900000")
+        // This helps it pass your backend @Size(min = 11, max = 11) constraint
+        const cleanPhoneNumber = phone.replace(/\s+/g, '');
+
+        // 3. BUILD THE PAYLOAD (Keys exactly match RegistrationDTO)
+        const payload = {
+            email: email,
+            phoneNumber: cleanPhoneNumber, // Changed to match backend DTO
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+            role: role // Sends "FREELANCER" or "CLIENT"
+        };
+
+        try {
+            // 4. Send to Spring Boot
+            const response = await fetch('http://localhost:8080/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                // Throw the error returned by Spring Boot's validation
+                throw new Error(data.message || 'Registration failed. Please check your details.');
+            }
+
+            // 5. Success! Move to 2FA panel
+            localStorage.setItem('email', email);
+            window.location.href = '/signUp/verification';
+        } catch (error: any) {
+            console.error("Signup Error:", error);
+            // You can use a dedicated state for server errors if you want to display the specific message
+            setShowError(true);
+        }
+    };
 
     return (
         <div className="min-h-screen flex flex-col bg-[#f0f2f0] text-slate-900 font-sans">
@@ -154,7 +194,7 @@ export default function TrustBridgeSignUp() {
                                 </div>
 
                                 {/* Submit */}
-                                <button onClick={trySignUp} className="w-full bg-[#0F5525] text-white rounded-lg py-2 text-[13px] font-medium flex items-center justify-center gap-1.5 mb-3 transition-colors hover:bg-[#3FCD6B]">
+                                <button onClick={handleSignUpSubmit} className="w-full bg-[#0F5525] text-white rounded-lg py-2 text-[13px] font-medium flex items-center justify-center gap-1.5 mb-3 transition-colors hover:bg-[#3FCD6B]">
                                     Create account
                                 </button>
 
@@ -181,7 +221,6 @@ export default function TrustBridgeSignUp() {
                                         Apple
                                     </button>
                                 </div>
-
                             </div>
                         </div>
                     )}
@@ -226,7 +265,7 @@ export default function TrustBridgeSignUp() {
                                     <div className="text-[11px] text-[#999] mt-1">We&#39;ll send a reset link if this email is registered.</div>
                                 </div>
 
-                                <button onClick={() => setActivePanel('magic-sent')} className="w-full bg-[#0F5525] text-white rounded-lg py-2 text-[13px] font-medium flex items-center justify-center gap-1.5 transition-colors hover:bg-[#3FCD6B]">
+                                <button className="w-full bg-[#0F5525] text-white rounded-lg py-2 text-[13px] font-medium flex items-center justify-center gap-1.5 transition-colors hover:bg-[#3FCD6B]">
                                     <i className="ti ti-send text-[14px]" /> Send reset link
                                 </button>
 
@@ -236,10 +275,12 @@ export default function TrustBridgeSignUp() {
                             </div>
                         </div>
                     )}
-
-
                 </div>
             </div>
         </div>
     );
+}
+
+function setError(message: any) {
+    throw new Error("Function not implemented.");
 }

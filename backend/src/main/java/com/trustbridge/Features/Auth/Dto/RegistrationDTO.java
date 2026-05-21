@@ -8,11 +8,15 @@ import jakarta.validation.constraints.Size;
 
 public record RegistrationDTO(
         @NotBlank(message = "Email is required")
+
         @Email(message = "Email should be valid")
         String email,
 
+        @Size(min = 11, max = 11, message = "Phone number must be 8 characters")
+        String phoneNumber,
+
         @NotBlank(message = "Password is required")
-        @Size(min = 8, message = "Password must be at least 8 characters")
+        @Size(min = 8, message = "Password must be at least 11 characters")
         String password,
 
         @NotBlank(message = "First name is required")
@@ -22,5 +26,5 @@ public record RegistrationDTO(
         String lastName,
 
         @NotNull(message = "Role is required")
-        role role
+        String role
 ) {}

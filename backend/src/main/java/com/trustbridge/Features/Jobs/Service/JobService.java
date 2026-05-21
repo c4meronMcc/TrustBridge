@@ -6,7 +6,7 @@ import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Enums.JobStatus.*;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
-import com.trustbridge.Features.Auth.RegistrationService;
+import com.trustbridge.Features.Auth.Service.RegistrationService;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import jakarta.transaction.Transactional;
