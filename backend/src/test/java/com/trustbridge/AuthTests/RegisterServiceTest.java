@@ -12,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -36,12 +37,15 @@ class RegistrationServiceTest {
 
     private RegistrationDTO validRegistrationDTO;
 
+    @Mock // <-- THIS IS THE FIX
+    private ApplicationEventPublisher eventPublisher;
+
     @BeforeEach
     void setUp() {
         validRegistrationDTO = new RegistrationDTO(
                 "test@test.com",
                 "07494874632",
-                "password123!",
+                "encodedPassword",
                 "test",
                 "test",
                 "freelancer"
@@ -69,7 +73,7 @@ class RegistrationServiceTest {
         assertThat(savedUser.getPassword()).isEqualTo("encodedPassword");
         assertThat(savedUser.getFirstName()).isEqualTo(validRegistrationDTO.firstName());
         assertThat(savedUser.getLastName()).isEqualTo(validRegistrationDTO.lastName());
-        assertThat(savedUser.getUserRole()).isEqualTo(validRegistrationDTO.role());
+        assertThat(savedUser.getUserRole()).isEqualTo(UserRole.role.FREELANCER);
     }
 
     @Test
@@ -151,7 +155,7 @@ class RegistrationServiceTest {
         assertThat(savedUser.getEmail()).isEqualTo(dto.email());
         assertThat(savedUser.getFirstName()).isEqualTo(dto.firstName());
         assertThat(savedUser.getLastName()).isEqualTo(dto.lastName());
-        assertThat(savedUser.getUserRole()).isEqualTo(dto.role());
+        assertThat(savedUser.getUserRole()).isEqualTo(UserRole.role.CLIENT);
     }
 
     @Test
