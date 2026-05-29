@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.UUID;
 
 public record JobCreationDto(
-        @NotNull String freelancerEmail,
         @Nullable String clientEmail,
         @Nullable String clientPhoneNumber,
         @Nullable String clientFirstName,

@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -28,8 +29,11 @@ public class JobApiController {
     }
 
     @PostMapping("/creation")
-    public ResponseEntity<String> jobCreation(@RequestBody @Valid JobCreationDto dto) {
-        jobService.processNewJobOffer(dto);
+    public ResponseEntity<String> jobCreation(@RequestBody @Valid JobCreationDto dto, Principal principal) {
+
+        String authenticatedEmail = principal.getName();
+
+        jobService.processNewJobOffer(dto, authenticatedEmail);
         return  ResponseEntity.ok("Job created successfully!");
     }
 

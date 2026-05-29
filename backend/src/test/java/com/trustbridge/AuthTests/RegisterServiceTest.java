@@ -37,7 +37,7 @@ class RegistrationServiceTest {
 
     private RegistrationDTO validRegistrationDTO;
 
-    @Mock // <-- THIS IS THE FIX
+    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @BeforeEach

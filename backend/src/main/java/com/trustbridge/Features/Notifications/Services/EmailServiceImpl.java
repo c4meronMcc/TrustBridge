@@ -1,6 +1,5 @@
 package com.trustbridge.Features.Notifications.Services;
 
-
 import com.trustbridge.Domain.Entities.EmailLog;
 import com.trustbridge.Domain.Enums.EmailStatus;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
@@ -13,6 +12,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID; // 🚨 Make sure to import UUID
 
 @Slf4j
 @Service
@@ -27,7 +28,8 @@ public class EmailServiceImpl implements EmailSenderService {
     private String senderEmail;
 
     @Override
-    public void sendEmail(String toAddress, String subject, EmailTemplateType emailTemplateType, String htmlBody) {
+    // 🚨 1. Replaced 'String textBody' with 'UUID relatedEntityId'
+    public void sendEmail(String toAddress, String subject, EmailTemplateType emailTemplateType, String htmlBody, UUID relatedEntityId) {
 
         log.info("Connecting to SMTP server to send email to: {}", toAddress);
 
@@ -35,8 +37,8 @@ public class EmailServiceImpl implements EmailSenderService {
                 .recipientEmail(toAddress)
                 .subject(subject)
                 .templateType(emailTemplateType)
+                .relatedEntityId(relatedEntityId) // 🚨 2. Attach the Job ID to the audit log!
                 .build();
-
 
         try {
             MimeMessage message = mailSender.createMimeMessage();

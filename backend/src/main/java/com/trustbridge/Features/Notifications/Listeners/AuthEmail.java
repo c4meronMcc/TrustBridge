@@ -43,7 +43,8 @@ public class AuthEmail {
                 userEmail,
                 "Verify Account",
                 EmailTemplateType.WELCOME_FREELANCER,
-                htmlBody
+                htmlBody,
+                user.getId()
         );
 
         log.info("Email successfully sent to " + user.getUserRole().name());

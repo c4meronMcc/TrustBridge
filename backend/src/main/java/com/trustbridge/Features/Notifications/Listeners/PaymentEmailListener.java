@@ -50,7 +50,8 @@ public class PaymentEmailListener {
                 freelancerEmail,
         "Payment Received",
                 EmailTemplateType.MILESTONE_FUNDED_FREELANCER_NOTICE,
-                htmlBody
+                htmlBody,
+                milestone.getId()
         );
 
         log.info("✅ Email successfully sent to Freelancer!");

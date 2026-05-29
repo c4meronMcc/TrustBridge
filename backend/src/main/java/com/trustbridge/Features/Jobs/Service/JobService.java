@@ -38,32 +38,29 @@ public class JobService {
     }
 
     @Transactional
-    public void processNewJobOffer(@Valid JobCreationDto dto) {
+    // Add the email parameter here
+    public void processNewJobOffer(@Valid JobCreationDto dto, String authenticatedEmail) {
         String token = generateInviteToken();
-        String BASE_URL = "https://localhost:8080/invite/";
+        String BASE_URL = "http://localhost:3000/invite/"; // Pointing to Next.js frontend
         String inviteLink = BASE_URL + token;
 
         Users client = null;
         if (hasEmail(dto.clientEmail())) {
-            // Find existing OR create new guest
-            // NOTE: Ensure your RegistrationService.createGuestUser accepts the DTO or specific fields
             client = userRepository.findByEmail(dto.clientEmail())
                     .orElseGet(() -> registrationService.createGuestUser(dto));
         }
 
-
-
-        saveNewJob(dto, token, client);
+        // Pass the email down to the save method
+        Jobs savedJob = saveNewJob(dto, token, client, authenticatedEmail);
 
         if (client != null) {
-            sendNotificationEmail(dto, inviteLink);
+            sendNotificationEmail(dto, inviteLink, savedJob.getId());
         }
-
     }
 
     @Transactional
-    public void saveNewJob(@Valid JobCreationDto dto, String token, Users client) {
-        Users freelancer = userRepository.findByEmail(dto.freelancerEmail())
+    public Jobs  saveNewJob(@Valid JobCreationDto dto, String token, Users client, String authenticatedEmail) {
+        Users freelancer = userRepository.findByEmail(authenticatedEmail)
                 .orElseThrow(() -> new RuntimeException("Freelancer not found"));
 
         Jobs newJob = Jobs.builder()
@@ -94,11 +91,12 @@ public class JobService {
             milestoneService.createMilestones(newJob, List.of(defaultMilestone));
         }
 
+        return newJob;
     }
 
     @Transactional
-    public void saveDraftJob(@Valid @RequestBody JobCreationDto dto){
-        Users freelancer = userRepository.findByEmail(dto.freelancerEmail()).orElse(null);
+    public void saveDraftJob(@Valid @RequestBody JobCreationDto dto, String authenticatedEmail){
+        Users freelancer = userRepository.findByEmail(authenticatedEmail).orElse(null);
         Users client = (dto.clientEmail() != null)
                 ? userRepository.findByEmail(dto.clientEmail()).orElse(null)
                 : null;
@@ -183,9 +181,9 @@ public class JobService {
     }
 
     @Async
-    protected void sendNotificationEmail(JobCreationDto dto, String inviteLink) {
+    protected void sendNotificationEmail(JobCreationDto dto, String inviteLink, UUID jobId) {
         String body = buildEmailTemplate(dto, inviteLink);
-        emailServiceImpl.sendEmail(dto.clientEmail(), "Project Proposal: " + dto.title(), EmailTemplateType.JOB_INVITATION, body);
+        emailServiceImpl.sendEmail(dto.clientEmail(), "Project Proposal: " + dto.title(), EmailTemplateType.JOB_INVITATION, body, jobId);
         System.out.println("Automated email sent to: " + dto.clientEmail());
     }
 
