@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import StripeOnboardingButton from "../../components/Dashboard/StripeOnboardingButton"
 
 // ─── ENVIRONMENT ──────────────────────────────────────────────────────────────
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080';
@@ -38,6 +39,7 @@ interface DashboardData {
     firstName: string;
     lastName: string;
     trustScore: number;
+    payoutsEnabled: boolean;
     fundsInEscrowHolding: number;
     fundsPending: number;
     fundsPaidOut: number;
@@ -141,7 +143,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ className, icon, children }) 
 
 export default function TrustBridgeDashboard() {
     const router = useRouter();
-
+    const [showNotifications, setShowNotifications] = useState(false);
     const [data, setData]             = useState<DashboardData | null>(null);
     const [isLoading, setIsLoading]   = useState(true);
     const [error, setError]           = useState<string | null>(null);
@@ -458,7 +460,8 @@ export default function TrustBridgeDashboard() {
             <div className="flex-1 flex flex-col overflow-hidden min-w-0">
 
                 {/* Topbar */}
-                <header className="bg-white dark:bg-neutral-950 border-b border-slate-200 dark:border-neutral-800 px-4 lg:px-8 py-4 flex items-center justify-between z-10 shrink-0 shadow-sm dark:shadow-none">
+                {/* Topbar */}
+                <header className="bg-white dark:bg-neutral-950 border-b border-slate-200 dark:border-neutral-800 px-4 lg:px-8 py-4 flex items-center justify-between relative z-50 shrink-0 shadow-sm dark:shadow-none">
                     <div className="flex items-center gap-3">
                         <button
                             className="lg:hidden w-9 h-9 flex items-center justify-center text-slate-500 dark:text-neutral-400 hover:text-slate-800 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors"
@@ -478,12 +481,67 @@ export default function TrustBridgeDashboard() {
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button className="hidden sm:flex items-center gap-2 text-[13px] font-semibold text-slate-600 dark:text-neutral-300 border border-slate-200 dark:border-neutral-800 rounded-xl py-2 px-4 hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors">
+
+                    <div className="flex items-center gap-2 relative">
+                        {/* 💥 UPDATED NOTIFICATION BUTTON */}
+                        <button
+                            onClick={() => setShowNotifications(!showNotifications)}
+                            className="hidden sm:flex items-center gap-2 text-[13px] font-semibold text-slate-600 dark:text-neutral-300 border border-slate-200 dark:border-neutral-800 rounded-xl py-2 px-4 hover:bg-slate-50 dark:hover:bg-neutral-900 transition-colors relative"
+                        >
                             <i className="ti ti-bell text-[15px]"></i>
                             <span>Notifications</span>
+
+                            {/* Red dot indicator if action is required */}
+                            {!data.payoutsEnabled && (
+                                <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                </span>
+                            )}
                         </button>
-                        <button onClick={() => router.push('/dashboard/freelancer/jobs/new')} className="bg-[#0F5525] dark:bg-[#3FCD6B] hover:bg-[#1a7a38] dark:hover:opacity-90 text-white dark:text-neutral-950 rounded-xl py-2 px-4 text-[13px] font-semibold flex items-center gap-1.5 transition-opacity shadow-sm dark:shadow-none">
+
+                        {/* 💥 THE NOTIFICATION DROPDOWN PANEL */}
+                        {showNotifications && (
+                            <div className="absolute top-full right-14 mt-2 w-[340px] bg-white dark:bg-neutral-900 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-xl z-50 overflow-hidden">
+                                <div className="px-4 py-3 border-b border-slate-100 dark:border-neutral-800 flex justify-between items-center bg-slate-50/50 dark:bg-transparent">
+                                    <span className="text-sm font-bold text-slate-900 dark:text-white">Notifications</span>
+                                    <button onClick={() => setShowNotifications(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-neutral-300">
+                                        <i className="ti ti-x"></i>
+                                    </button>
+                                </div>
+
+                                <div className="max-h-[400px] overflow-y-auto p-4 flex flex-col gap-3">
+                                    {/* The KYC Verification Push */}
+                                    {!data.payoutsEnabled ? (
+                                        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700/30 p-4 rounded-xl">
+                                            <div className="flex items-start gap-3 mb-3">
+                                                <i className="ti ti-alert-triangle text-amber-600 dark:text-amber-500 text-lg mt-0.5"></i>
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-amber-900 dark:text-amber-500">Action Required</h4>
+                                                    <p className="text-xs text-amber-700 dark:text-amber-600/80 mt-1 leading-relaxed">
+                                                        Your account is restricted. You must verify your identity to accept jobs or withdraw funds.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {/* Inject the standalone button component here */}
+                                            <StripeOnboardingButton />
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-6 text-sm text-slate-500 dark:text-neutral-400">
+                                            You&#39;re all caught up!
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        <button onClick={() => {
+                            if (!data.payoutsEnabled) {
+                                setShowNotifications(true); // Pop open the notification panel to show them the button
+                            } else {
+                                router.push('/dashboard/freelancer/jobs/new');
+                            }
+                        }} className="bg-[#0F5525] dark:bg-[#3FCD6B] hover:bg-[#1a7a38] dark:hover:opacity-90 text-white dark:text-neutral-950 rounded-xl py-2 px-4 text-[13px] font-semibold flex items-center gap-1.5 transition-opacity shadow-sm dark:shadow-none">
                             <i className="ti ti-plus text-[15px]"></i>
                             <span className="hidden sm:inline">New job</span>
                         </button>
@@ -813,7 +871,9 @@ export default function TrustBridgeDashboard() {
                                                 </button>
 
                                                 {openEscrow === key && (
-                                                    <div className="px-5 py-3.5 pl-[64px] bg-slate-50 dark:bg-neutral-900/50 text-[11.5px] border-t border-slate-100 dark:border-neutral-800">
+                                                    <div className="px-5 py-4 pl-[64px] bg-slate-50 dark:bg-neutral-900/50 text-[11.5px] border-t border-slate-100 dark:border-neutral-800 flex flex-col gap-3">
+
+                                                        {/* Existing Quick Stats */}
                                                         <div className="space-y-1.5">
                                                             {[
                                                                 { label: 'Current phase',   value: job.currentMilestone || 'Processing' },
@@ -827,6 +887,16 @@ export default function TrustBridgeDashboard() {
                                                                 </div>
                                                             ))}
                                                         </div>
+
+                                                        {/* New Navigation Button */}
+                                                        <button
+                                                            onClick={() => router.push(`/dashboard/freelancer/jobs/${job.jobId}`)}
+                                                            className="group w-full flex items-center justify-between py-2.5 px-4 mt-1 bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-slate-800 dark:text-white font-bold hover:border-[#3FCD6B] hover:text-[#0A3D1A] dark:hover:border-[#3FCD6B]/50 dark:hover:text-[#3FCD6B] transition-all duration-300 shadow-sm dark:shadow-none"
+                                                        >
+                                                            <span>Manage Escrow</span>
+                                                            <i className="ti ti-arrow-right transition-transform duration-300 group-hover:translate-x-1"></i>
+                                                        </button>
+
                                                     </div>
                                                 )}
                                             </div>

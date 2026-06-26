@@ -1,10 +1,7 @@
 package com.trustbridge;
 
 import com.trustbridge.Domain.Entities.*;
-import com.trustbridge.Domain.Enums.JobStatus;
-import com.trustbridge.Domain.Enums.MilestoneStatus;
-import com.trustbridge.Domain.Enums.PaymentRequestStatus;
-import com.trustbridge.Domain.Enums.UserRole;
+import com.trustbridge.Domain.Enums.*;
 import com.trustbridge.Domain.Repositories.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -90,6 +87,7 @@ public class DataSeeder implements CommandLineRunner {
                 .amount(new BigDecimal("3250.00")) // NOT NULL constraint
                 .expiresAt(OffsetDateTime.now().plusDays(7)) // NOT NULL constraint
                 .status(PaymentRequestStatus.PAID) // Matches your SQL CHECK constraint
+                .paymentMethodType(PaymentMethodType.STRIPE)
                 .build();
         paymentRequestRepository.save(pr1);
 
@@ -119,7 +117,8 @@ public class DataSeeder implements CommandLineRunner {
                 .milestone(milestone2)
                 .amount(new BigDecimal("6150.00"))
                 .expiresAt(OffsetDateTime.now().plusDays(7))
-                .status(PaymentRequestStatus.PAID) // Matches your SQL CHECK constraint
+                .status(PaymentRequestStatus.PAID) // Matches your SQL CHECK constraint\
+                .paymentMethodType(PaymentMethodType.STRIPE)
                 .build();
         paymentRequestRepository.save(pr2);
 
@@ -150,6 +149,7 @@ public class DataSeeder implements CommandLineRunner {
                 .amount(new BigDecimal("2400.00"))
                 .expiresAt(OffsetDateTime.now().minusDays(2)) // Already expired/paid in the past
                 .status(PaymentRequestStatus.PAID)
+                .paymentMethodType(PaymentMethodType.STRIPE)
                 .build();
         paymentRequestRepository.save(pr3);
 

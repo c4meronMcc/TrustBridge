@@ -1,16 +1,22 @@
 package com.trustbridge.Features.Jobs.Service;
 
 import com.trustbridge.Domain.Entities.Jobs;
+import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Entities.Users;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Enums.JobStatus.*;
+import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Repositories.JobRepository;
+import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Auth.Service.RegistrationService;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
+import com.trustbridge.Features.Jobs.Dto.PaymentActivationDto;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
+import com.trustbridge.Features.Payments.Service.PaymentRequestService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,21 +27,20 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class JobService {
 
-    JobRepository jobRepository;
-    UserRepository userRepository;
-    RegistrationService registrationService;
-    EmailServiceImpl emailServiceImpl;
-    MilestoneService milestoneService;
+    private final JobRepository jobRepository;
+    private final UserRepository userRepository;
+    private final RegistrationService registrationService;
+    private final EmailServiceImpl emailServiceImpl;
+    private final MilestoneService milestoneService;
+    private final JobStateService jobStateService;
+    private final MilestoneRepository milestoneRepository;
+    private final PaymentRequestService paymentRequestService;
 
-    public JobService(JobRepository jobRepository, UserRepository userRepository, RegistrationService registrationService, EmailServiceImpl emailServiceImpl, MilestoneService milestoneService) {
-        this.jobRepository = jobRepository;
-        this.userRepository = userRepository;
-        this.registrationService = registrationService;
-        this.emailServiceImpl = emailServiceImpl;
-        this.milestoneService = milestoneService;
-    }
+
+
 
     @Transactional
     // Add the email parameter here
@@ -133,6 +138,34 @@ public class JobService {
         }
 
         jobRepository.delete(job);
+    }
+
+    @Transactional
+    public PaymentActivationDto activateJob(String inviteToken) {
+        Jobs job = jobRepository.findByInviteToken(inviteToken)
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
+
+        // IDEMPOTENCY CHECK
+        if (job.getStatus() == jobStatus.PENDING_ACCEPTANCE) {
+            jobStateService.pendingToActive(job.getId(), inviteToken);
+        } else if (job.getStatus() != jobStatus.AWAITING_PAYMENT) {
+            throw new IllegalStateException("Job cannot be accepted in its current state.");
+        }
+
+        // 💥 THE FIX: Just ask for the very first milestone, ignoring the status check.
+        // The state machine is currently handling the status, we just need the ID!
+        Milestones firstMilestone = milestoneRepository
+                .findFirstByJobIdOrderBySequenceOrderAsc(job.getId()) // 👈 Update this query
+                .orElseThrow(() -> new RuntimeException("No milestones found for this job."));
+
+        // Now that we have the ID, we can fetch the token that the PaymentService just saved
+        String clientSecret = paymentRequestService.getClientSecretForMilestone(firstMilestone.getId());
+
+        if (clientSecret == null) {
+            throw new RuntimeException("Stripe token was not generated.");
+        }
+
+        return new PaymentActivationDto(clientSecret);
     }
 
     @Transactional

@@ -12,6 +12,6 @@ public record JobSummaryDto(
         /* Milestone */
         String currentMilestoneTitle,
 //        String milestoneDescription,
-        String DepositStatus,
+        String depositStatus,
         String deadline
 ) {}

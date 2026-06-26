@@ -52,6 +52,12 @@ public class StripeConnectService {
                 .setRefreshUrl("http://localhost:3000/onboarding/refresh")
                 .setReturnUrl("http://localhost:3000/onboarding/success")
                 .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
+                .setCollectionOptions(
+                        AccountLinkCreateParams.CollectionOptions.builder()
+                                .setFields(AccountLinkCreateParams.CollectionOptions.Fields.EVENTUALLY_DUE)
+                                .setFutureRequirements(AccountLinkCreateParams.CollectionOptions.FutureRequirements.INCLUDE)
+                                .build()
+                )
                 .build();
 
         AccountLink accountLink = AccountLink.create(linkParams);

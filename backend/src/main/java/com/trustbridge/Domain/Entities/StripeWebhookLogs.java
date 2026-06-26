@@ -31,6 +31,7 @@ public class StripeWebhookLogs {
     @JoinColumn(name = "payment_request_id", nullable = false)
     private PaymentRequest paymentRequest;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "processing_status", nullable = false)
     private StripeWebhookProcessingStatus processingStatus;
 

@@ -1,7 +1,11 @@
 package com.trustbridge.Features.Jobs.StateMachine;
 
+import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.MilestoneStatus.milestoneStatus;
 import com.trustbridge.Domain.Enums.MilestoneEvent.milestoneEvent;
+import com.trustbridge.Domain.Repositories.MilestoneRepository;
+import com.trustbridge.Features.Payments.Service.PaymentRequestService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.action.Action;
@@ -10,13 +14,18 @@ import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 import org.springframework.statemachine.guard.Guard;
+import org.springframework.util.Assert;
 
 import java.util.EnumSet;
 import java.util.UUID;
 
 @Configuration
 @EnableStateMachineFactory(name = "MilestoneStateMachineFactory")
+@RequiredArgsConstructor
 public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapter<milestoneStatus, milestoneEvent> {
+
+    private final MilestoneRepository milestoneRepository;
+    private final PaymentRequestService paymentRequestService;
 
     @Override
     public void configure(StateMachineStateConfigurer<milestoneStatus, milestoneEvent> states) throws Exception {
@@ -34,6 +43,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                 .withExternal()
                 .source(milestoneStatus.LOCKED).target(milestoneStatus.AWAITING_PAYMENT)
                 .event(milestoneEvent.UNLOCK)
+                .action(generatePaymentRequestAction())
                 //In Progress -> Submitted (Submitted Work)
                 .and()
                 .withExternal()
@@ -62,6 +72,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                 .source(milestoneStatus.AWAITING_PAYMENT).target(milestoneStatus.IN_PROGRESS)
                 .event(milestoneEvent.FUNDS_DEPOSITED)
                 .guard(isFundedGuard())
+                .action(notifyFreelancerToStartAction())
                 //Approved -> Paid Out (Funds Paid)
                 .and()
                 .withExternal()
@@ -88,11 +99,20 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                 .guard(escalationAllowedGuard());
     }
 
-    @Bean
-    public Action<milestoneStatus, milestoneEvent> updateMilestoneStatusAction() {
+    @Bean Action<milestoneStatus, milestoneEvent> generatePaymentRequestAction() {
         return context -> {
-            UUID milestoneId = (UUID) context.getMessageHeaders().get("milestoneId");
-            System.out.println("Logic executed: Updating Milestone " + milestoneId + "to IN_PROGRESS");
+            UUID milestoneId = context.getMessageHeaders().get("milestoneId", UUID.class);
+
+            Assert .notNull(milestoneId, "Milestone ID is required!");
+            Milestones milestones = milestoneRepository.findById(milestoneId)
+                    .orElseThrow(() -> new RuntimeException("Milestone not found!"));
+
+            try {
+                paymentRequestService.createPaymentRequest(milestones);
+                System.out.println("ACTION FIRED: Payment Request created for Milestone " + milestoneId);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         };
     }
 

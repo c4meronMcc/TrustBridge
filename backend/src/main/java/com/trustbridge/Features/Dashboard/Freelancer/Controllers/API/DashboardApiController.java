@@ -17,13 +17,10 @@ public class DashboardApiController {
     @GetMapping("/freelancer")
     public ResponseEntity<DashboardDataDto> getDashboardData(Authentication authentication) {
 
-        // 1. Securely extract the email from the validated JWT token
         String email = authentication.getName();
 
-        // 2. Fetch the data
         DashboardDataDto dashboardData = dashboardService.getDashboardData(email);
 
-        // 3. Return the actual JSON payload
         return ResponseEntity.ok(dashboardData);
     }
 }

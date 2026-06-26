@@ -23,11 +23,10 @@ public class StripeWebhookController {
     private final StripeWebhookService stripeWebhookService;
 
 
-    @PostMapping("/Stripe")
+    @PostMapping("/stripe")
     public ResponseEntity<String> handleWebhook(
             @RequestBody String payload,
             @RequestHeader("Stripe-Signature") String sigHeader) {
-
 
         Event event;
 
@@ -47,10 +46,11 @@ public class StripeWebhookController {
             switch (event.getType()) {
                 case "checkout.session.completed" -> stripeWebhookService.handleCheckoutSessionCompleted(event);
                 case "payment_intent.succeeded" -> stripeWebhookService.handlePaymentIntentSucceeded(event);
+                case "account.updated" -> stripeWebhookService.handleAccountUpdated(event);
                 default -> System.out.println("Unhandled event type: " + event.getType());
             }
         } catch (Exception e) {
-            log.error("Error processing Stripe webhook Event: {}: {}", event.getId(), e.getMessage());
+                log.error("Error processing Stripe webhook Event: {}: {}", event.getId(), e.getMessage());
         }
 
         return ResponseEntity.ok("Success");

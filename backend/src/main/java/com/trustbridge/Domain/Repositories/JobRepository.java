@@ -81,4 +81,22 @@ public interface JobRepository extends JpaRepository<Jobs, UUID> {
         ORDER BY j.updatedAt DESC
     """)
     ArrayList<JobSummaryDto> findAllJobsAwaitingPayment(UUID freelancerId);
+
+    @Query("""
+        SELECT new com.trustbridge.Features.Dashboard.Freelancer.Dto.JobSummaryDto(
+            CAST(j.id AS string),
+            j.title,
+            COALESCE(concat(c.firstName, ' ', c.lastName), 'Unknown Client'),
+            CAST(j.totalAmount AS double),
+            0, 
+            CAST(j.status AS string),
+            'View Milestones', 
+            'N/A', 
+            CAST(j.updatedAt AS string)
+        )
+        FROM Jobs j
+        LEFT JOIN j.client c
+        WHERE j.id = :jobId
+    """)
+    JobSummaryDto findJobSummaryById(@Param("jobId") UUID jobId);
 }

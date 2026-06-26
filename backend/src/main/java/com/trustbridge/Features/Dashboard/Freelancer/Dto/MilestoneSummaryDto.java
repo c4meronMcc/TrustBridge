@@ -4,6 +4,6 @@ public record MilestoneSummaryDto(
    String milestoneId,
    int orderIndex,
    String title,
-   double MilestoneAmount,
+   double milestoneAmount,
    String status
 ) {}

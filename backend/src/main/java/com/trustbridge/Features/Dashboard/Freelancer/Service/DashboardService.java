@@ -1,9 +1,11 @@
 package com.trustbridge.Features.Dashboard.Freelancer.Service;
 
 import com.trustbridge.Domain.Entities.Milestones;
+import com.trustbridge.Domain.Entities.StripeAccount;
 import com.trustbridge.Domain.Entities.Users;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
+import com.trustbridge.Domain.Repositories.StripeAccountRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Dashboard.Freelancer.Dto.*;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ public class DashboardService {
     private final JobRepository jobRepository;
     private final MilestoneRepository milestoneRepository;
     private final UserRepository userRepository;
+    private final StripeAccountRepository stripeAccountRepository;
 
     public DashboardDataDto getDashboardData(String email) {
 
@@ -26,6 +29,10 @@ public class DashboardService {
 
         // financial metrics
         FinancialMetricsDto metrics = milestoneRepository.getFreelancerFinancialMetrics(user.getId());
+
+        boolean isPayoutsEnabled = stripeAccountRepository.findByUserId(user.getId())
+                .map(StripeAccount::getPayoutsEnabled)
+                .orElse(false);
 
         // Earning graph data
         List<EarningDataPointDto> earningsData= milestoneRepository.getEarningsLast12Months(user.getId());
@@ -41,6 +48,7 @@ public class DashboardService {
                 user.getFirstName(),
                 user.getLastName(),
                 67,
+                isPayoutsEnabled,
                 metrics.fundsInEscrowHolding(),
                 metrics.fundsPending(),
                 metrics.fundsPaidOut(),

@@ -56,43 +56,52 @@ public class PaymentStateService {
         return sm;
     }
 
-    public void fireEvent(UUID paymentId, PaymentRequestEvent event) {
+    public void fireEvent(UUID paymentId, PaymentRequestEvent event, String guardKey) {
         StateMachine<PaymentRequestStatus, PaymentRequestEvent> sm = buildStateMachine(paymentId);
 
         Message<PaymentRequestEvent> message = MessageBuilder
                 .withPayload(event)
                 .setHeader("paymentRequestId", paymentId)
+                .setHeader(guardKey, true)
                 .build();
 
         sm.sendEvent(Mono.just(message)).subscribe();
+
+        sm.sendEvent(Mono.just(message)).subscribe(result -> {
+            if (result.getResultType() == org.springframework.statemachine.StateMachineEventResult.ResultType.DENIED) {
+                System.out.println("❌ TRANSITION DENIED! Event: " + event + " | Current DB State: " + sm.getState().getId());
+            } else if (result.getResultType() == org.springframework.statemachine.StateMachineEventResult.ResultType.ACCEPTED) {
+                System.out.println("✅ TRANSITION ACCEPTED! Event: " + event);
+            }
+        });
     }
 
     public void initiatePayment(UUID paymentId) {
-        fireEvent(paymentId, PaymentRequestEvent.INITIATE_PAYMENT);
+        fireEvent(paymentId, PaymentRequestEvent.INITIATE_PAYMENT, "isPaymentInitiated");
     }
 
     public void paymentSuccessful(UUID paymentId) {
-        fireEvent(paymentId, PaymentRequestEvent.PAYMENT_SUCCESSFUL);
+        fireEvent(paymentId, PaymentRequestEvent.PAYMENT_SUCCESSFUL, "isPaymentSuccessful");
     }
 
     public void paymentFailed(UUID paymentId) {
-        fireEvent(paymentId, PaymentRequestEvent.PAYMENT_FAILED);
+        fireEvent(paymentId, PaymentRequestEvent.PAYMENT_FAILED, "isPaymentFailed");
     }
 
     public void retryPayment(UUID paymentId) {
-        fireEvent(paymentId, PaymentRequestEvent.RETRY_PAYMENT);
+        fireEvent(paymentId, PaymentRequestEvent.RETRY_PAYMENT, "isPaymentRetrying");
     }
 
     public void expirePayment(UUID paymentId) {
-        fireEvent(paymentId, PaymentRequestEvent.EXPIRE_REQUEST);
+        fireEvent(paymentId, PaymentRequestEvent.EXPIRE_REQUEST, "isPaymentExpired");
     }
 
     public void cancelPayment(UUID paymentId) {
-        fireEvent(paymentId, PaymentRequestEvent.CANCEL_REQUEST);
+        fireEvent(paymentId, PaymentRequestEvent.CANCEL_REQUEST, "isPaymentCancelled");
     }
 
     public void refundPayment(UUID paymentId) {
-        fireEvent(paymentId, PaymentRequestEvent.REFUND_REQUEST);
+        fireEvent(paymentId, PaymentRequestEvent.REFUND_REQUEST, "isPaymentRefunded");
     }
 
 }

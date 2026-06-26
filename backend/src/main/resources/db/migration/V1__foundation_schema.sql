@@ -75,6 +75,7 @@ CREATE TABLE payment_requests (
       amount DECIMAL(19, 4) NOT NULL,
       status VARCHAR(50) DEFAULT 'PENDING'
           CHECK (status IN ('PENDING', 'PROCESSING', 'PAID', 'FAILED', 'EXPIRED', 'CANCELLED', 'REFUNDED')),
+      payment_method_type VARCHAR(50) NOT NULL,
       expires_at TIMESTAMPTZ NOT NULL,
       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

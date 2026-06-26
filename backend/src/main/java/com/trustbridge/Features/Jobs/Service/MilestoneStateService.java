@@ -1,9 +1,12 @@
 package com.trustbridge.Features.Jobs.Service;
 
+import com.trustbridge.Domain.Entities.Jobs;
 import com.trustbridge.Domain.Entities.Milestones;
+import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Features.Jobs.StateMachine.Interceptors.MilestoneStateChangeInterceptor;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
@@ -14,32 +17,33 @@ import com.trustbridge.Domain.Enums.MilestoneStatus.*;
 import com.trustbridge.Domain.Enums.MilestoneEvent.*;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class MilestoneStateService {
 
-    MilestoneRepository milestoneRepository;
+    private final MilestoneRepository milestoneRepository;
+    private final StateMachineFactory<milestoneStatus, milestoneEvent> stateMachineFactory;
+    private final MilestoneStateChangeInterceptor milestoneInterceptor;
+    private final JobRepository jobRepository;
 
-    @Autowired
-    StateMachineFactory<milestoneStatus, milestoneEvent> stateMachineFactory;
 
-    @Autowired
-    MilestoneStateChangeInterceptor milestoneInterceptor;
-
-    public MilestoneStateService(MilestoneRepository milestoneRepository) {
-        this.milestoneRepository = milestoneRepository;
-    }
 
     private StateMachine<milestoneStatus, milestoneEvent> buildStateMachine(UUID milestoneId) {
 
+        // get the milestone
         Milestones milestone = milestoneRepository.findById(milestoneId)
                 .orElseThrow(() -> new RuntimeException("Milestone not found!"));
 
+        // create the state machine
         StateMachine<milestoneStatus, milestoneEvent> sm = stateMachineFactory.getStateMachine(milestoneId.toString());
 
+        // reset the state machine
         sm.stopReactively().block();
 
+        // add the state change interceptor
         sm.getStateMachineAccessor().doWithAllRegions(accessor -> {
 
             accessor.addStateMachineInterceptor(milestoneInterceptor);
@@ -49,9 +53,25 @@ public class MilestoneStateService {
             )).block();
         });
 
+        // start the state machine
         sm.startReactively().block();
 
         return sm;
+    }
+
+    @Transactional
+    public void activateNextLockedMilestoneForJob(UUID jobId) {
+        Optional<Milestones> nextLockedMilestone = milestoneRepository
+                .findFirstByJobIdAndStatusOrderBySequenceOrderAsc(jobId, milestoneStatus.LOCKED);
+
+        if (nextLockedMilestone.isPresent()) {
+            Milestones target = nextLockedMilestone.get();
+            System.out.println("Found next step: Unlocking Milestone " + target.getId() + " (Sequence " + target.getSequenceOrder() + ")");
+
+            this.milestoneActivated(target.getId());
+        } else {
+            System.out.println("All milestones for Job " + jobId + " are already unlocked or finished.");
+        }
     }
 
     public void fireEvent(UUID milestoneId, milestoneEvent event) {
@@ -62,7 +82,7 @@ public class MilestoneStateService {
                 .setHeader("milestoneId", milestoneId)
                 .build();
 
-        sm.sendEvent(Mono.just(message)).subscribe();
+        sm.sendEvent(Mono.just(message)).blockLast();
     }
 
     // UN-GUARDED STATE TRANSITIONS

@@ -7,6 +7,7 @@ public record DashboardDataDto(
         String firstName,
         String lastName,
         Integer trustScore,
+        boolean payoutsEnabled,
         BigDecimal fundsInEscrowHolding,
         BigDecimal fundsPending,
         BigDecimal fundsPaidOut,

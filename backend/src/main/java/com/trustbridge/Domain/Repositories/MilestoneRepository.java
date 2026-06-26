@@ -1,13 +1,16 @@
 package com.trustbridge.Domain.Repositories;
 
 import com.trustbridge.Domain.Entities.Milestones;
+import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Features.Dashboard.Freelancer.Dto.EarningDataPointDto;
 import com.trustbridge.Features.Dashboard.Freelancer.Dto.FinancialMetricsDto;
+import com.trustbridge.Features.Dashboard.Freelancer.Dto.MilestoneSummaryDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,6 +51,26 @@ public interface MilestoneRepository extends JpaRepository<Milestones, UUID> {
         WHERE m.job.freelancer.id = :freelancerId
     """)
     FinancialMetricsDto getFreelancerFinancialMetrics(@Param("freelancerId") UUID freelancerId);
+
+    @Query("""
+        SELECT new com.trustbridge.Features.Dashboard.Freelancer.Dto.MilestoneSummaryDto(
+            CAST(m.id AS string),
+            m.sequenceOrder,
+            m.title,
+            CAST(m.amount AS double),
+            CAST(m.status AS string)
+        )
+        FROM Milestones m
+        WHERE m.job.id = :jobId
+        ORDER BY m.sequenceOrder ASC
+    """)
+    List<MilestoneSummaryDto> getMilestoneSummaryByJobId(@Param("jobId") UUID jobId);
+
+    Optional<Milestones> findFirstByJobIdAndStatusOrderBySequenceOrderAsc(UUID jobId, MilestoneStatus.milestoneStatus status);
+
+    boolean existsByJobIdAndStatusNotIn(UUID jobId, Collection<MilestoneStatus.milestoneStatus> completedStatuses);
+
+    Optional<Milestones> findFirstByJobIdOrderBySequenceOrderAsc(UUID jobId);
 
     List<Milestones> findTop10ByJobFreelancerIdOrderByUpdatedAtDesc(UUID freelancerId);
 }
