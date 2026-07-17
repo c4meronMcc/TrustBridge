@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useJobWorkspace}  from "../../../../components/context/JobWorkSpaceContext";
 import {
     CheckCircle2,
     Circle,
@@ -18,6 +19,7 @@ import {
 
 // --- TYPES ---
 interface MilestoneSummaryDto {
+    scopeItems: any[];
     milestoneId: string;
     orderIndex: number;
     title: string;
@@ -52,6 +54,8 @@ export default function JobDetails({ params }: { params?: Promise<{ jobId?: stri
     const resolvedParams = params ? React.use(params) : {};
     const currentJobId = resolvedParams.jobId;
 
+    const { setJobData } = useJobWorkspace();
+
     // --- API FETCH ---
     const fetchJobData = useCallback(async () => {
         if (!currentJobId) {
@@ -79,7 +83,13 @@ export default function JobDetails({ params }: { params?: Promise<{ jobId?: stri
             }
 
             const data: JobAndMilestoneData = await response.json();
+
+            // 1. Set local state for this page
             setApiData(data);
+
+            // 2. Hydrate the Context for the Request Release page
+            setJobData(data);
+
         } catch (err: any) {
             setError(err.message || "An unexpected error occurred.");
         } finally {
@@ -91,19 +101,25 @@ export default function JobDetails({ params }: { params?: Promise<{ jobId?: stri
         fetchJobData();
     }, [fetchJobData]);
 
-    // --- ACTION HANDLERS ---
-    const handleRequestRelease = async (milestoneId: string) => {
-        setIsProcessing(true);
-        try {
-            console.log(`Requesting release for milestone: ${milestoneId}`);
-            setTimeout(() => {
-                alert(`Release request sent to client for milestone ${milestoneId}!`);
-                setIsProcessing(false);
-            }, 1000);
-        } catch (err) {
-            alert("Failed to request release.");
-            setIsProcessing(false);
+    const handleRequestRelease = (milestoneId: string) => {
+        // 1. Find the specific milestone from your local state
+        const targetMilestone = milestones.find(m => m.milestoneId === milestoneId);
+
+        if (targetMilestone) {
+            // 2. Build the payload the Request Release page expects
+            const payload = {
+                ...targetMilestone,
+                jobTitle: job.title,
+                clientName: job.clientName,
+                scopeItems: targetMilestone.scopeItems || []
+            };
+
+            // 3. Save it to storage using a unique key
+            sessionStorage.setItem(`trustbridge_milestone_${milestoneId}`, JSON.stringify(payload));
         }
+
+        // 4. Navigate to the release page
+        router.push(`/dashboard/freelancer/jobs/${currentJobId}/release/${milestoneId}`);
     };
 
     // --- UI HELPERS ---
