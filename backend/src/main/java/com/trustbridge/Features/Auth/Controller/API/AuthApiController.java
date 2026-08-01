@@ -80,7 +80,7 @@ public class AuthApiController {
 
             ResponseCookie springCookie = ResponseCookie.from("jwt_token", jwt)
                     .httpOnly(true)
-                    .secure(true) // Set to true in production
+                    .secure(false) // Set to true in production
                     .path("/")
                     .maxAge(cookieMaxAge)
                     .sameSite("Lax")

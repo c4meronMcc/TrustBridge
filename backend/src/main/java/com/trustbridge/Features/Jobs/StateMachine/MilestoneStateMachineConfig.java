@@ -4,7 +4,6 @@ import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.MilestoneStatus.milestoneStatus;
 import com.trustbridge.Domain.Enums.MilestoneEvent.milestoneEvent;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
-import com.trustbridge.Features.Notifications.Services.EmailSenderService;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +19,7 @@ import org.springframework.util.Assert;
 
 import java.util.EnumSet;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 @Configuration
 @EnableStateMachineFactory(name = "MilestoneStateMachineFactory")
@@ -102,6 +102,8 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                 .guard(escalationAllowedGuard());
     }
 
+    String guardExecuted = "Guard executed: ";
+
     @Bean Action<milestoneStatus, milestoneEvent> generatePaymentRequestAction() {
         return context -> {
             UUID milestoneId = context.getMessageHeaders().get("milestoneId", UUID.class);
@@ -112,7 +114,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
 
             try {
                 paymentRequestService.createPaymentRequest(milestones);
-                System.out.println("ACTION FIRED: Payment Request created for Milestone " + milestoneId);
+                Logger.getLogger("ACTION FIRED: Payment Request created for Milestone " + milestoneId);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -126,7 +128,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
             // In reality, you would inject an EmailService here and call it
             // TODO: Inject EmailService here!
 
-            System.out.println("ACTION FIRED: Sending email to Freelancer for Milestone " + milestoneId + " - Funds secured, start working!");
+            Logger.getLogger("ACTION FIRED: Sending email to Freelancer for Milestone " + milestoneId + " - Funds secured, start working!");
         };
     }
 
@@ -134,7 +136,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     public Guard<milestoneStatus, milestoneEvent> isFundedGuard() {
         return context -> {
             Boolean isFunded = (Boolean) context.getMessageHeaders().get("isFunded");
-            System.out.println("Guard executed: " + isFunded);
+            Logger.getLogger(getClass().getName()).info( guardExecuted + isFunded);
             return isFunded != null && isFunded;
         };
     }
@@ -143,7 +145,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     public Guard<milestoneStatus, milestoneEvent> isClientApprovingMilestoneGuard() {
         return context -> {
             Boolean isClientApproving = (Boolean) context.getMessageHeaders().get("isClientApproving");
-            System.out.println("Guard executed: " + isClientApproving);
+            Logger.getLogger(getClass().getName()).info( guardExecuted + isClientApproving);
             return isClientApproving != null && isClientApproving;
         };
     }
@@ -152,7 +154,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     public Guard<milestoneStatus, milestoneEvent> isPreviousMilestoneApprovedGuard() {
         return context -> {
             Boolean isPreviousMilestoneApproved = (Boolean) context.getMessageHeaders().get("isPreviousMilestoneApproved");
-            System.out.println("Guard executed: " + isPreviousMilestoneApproved);
+            Logger.getLogger(getClass().getName()).info(guardExecuted + isPreviousMilestoneApproved);
             return isPreviousMilestoneApproved != null && isPreviousMilestoneApproved;
         };
     }
