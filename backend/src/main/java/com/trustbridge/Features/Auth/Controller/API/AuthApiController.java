@@ -1,5 +1,6 @@
 package com.trustbridge.Features.Auth.Controller.API;
 
+import com.trustbridge.Features.Auth.Dto.*;
 import com.trustbridge.Features.Auth.Service.LoginService;
 import com.trustbridge.Security.JwtService;
 import com.trustbridge.Security.JwtTokenProvider;
@@ -8,9 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import java.util.Map;
-import com.trustbridge.Features.Auth.Dto.LoginDto;
-import com.trustbridge.Features.Auth.Dto.RegistrationDTO;
-import com.trustbridge.Features.Auth.Dto.RegistrationVerificationDTO;
+import java.util.logging.Logger;
+
 import com.trustbridge.Features.Auth.Service.RegistrationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,32 +32,36 @@ public class AuthApiController {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final JwtTokenProvider jwtTokenProvider;
-    private Authentication authentication;
+    private Authentication auth;
+    private ApiResponse apiResponse;
+
+    String message = "message";
+    String error = "error";
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegistrationDTO request) {
+    public ResponseEntity<ApiResponse> register(@RequestBody RegistrationDTO request) {
         registrationService.registerPreVerification(request);
-        return ResponseEntity.ok(Map.of("message", "User registration successful"));
+        return ResponseEntity.ok(new ApiResponse("User registration successful"));
+
     }
 
     @PostMapping("/verificationCode")
-    public ResponseEntity<?> verifyCode(@Valid @RequestBody RegistrationVerificationDTO dto) {
+    public ResponseEntity<ApiResponse> verifyCode(@Valid @RequestBody RegistrationVerificationDTO dto) {
         registrationService.registerPostVerification(dto);
 
-        return ResponseEntity.ok(Map.of("message", "User verified successfully!"));
+        return ResponseEntity.ok(new ApiResponse("User verified successfully!"));
     }
 
     @PostMapping("/resendVerificationCode")
-    public ResponseEntity<?> resendVerificationCode(@RequestBody String email) {
+    public ResponseEntity<ApiResponse> resendVerificationCode(@RequestBody String email) {
         registrationService.resetVerificationCode(email);
 
-        return ResponseEntity.ok(Map.of("message", "Verification code resent successfully!"));
+        return ResponseEntity.ok(new ApiResponse("Verification code resent successfully!"));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginDto dto) {
+    public ResponseEntity<Object> login(@Valid @RequestBody LoginDto dto) {
         try {
-            // 1. Authenticate using the manager (this returns the 'authenticated' object)
             Authentication authentication = authenticationManager.authenticate(
                     new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
                             dto.email(),
@@ -65,43 +69,41 @@ public class AuthApiController {
                     )
             );
 
-            // 2. Perform your business logic check (is the account verified?)
             loginService.login(dto);
 
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String jwt = jwtService.generateToken(userDetails);
 
-            System.out.println("AT BIRTH LOGIN COOKIE: " + jwt);
+            Logger.getLogger("AuthApiController").info("AT BIRTH LOGIN COOKIE: " + jwt);
 
-            // 4. Build the cookie
+            int cookieMaxAge = 24 * 60 * 60;
+
             ResponseCookie springCookie = ResponseCookie.from("jwt_token", jwt)
                     .httpOnly(true)
-                    .secure(false) // Set to true in production
+                    .secure(true) // Set to true in production
                     .path("/")
-                    .maxAge(24 * 60 * 60)
+                    .maxAge(cookieMaxAge)
                     .sameSite("Lax")
                     .build();
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, springCookie.toString())
-                    .body(Map.of("message", "Login successful"));
+                    .body(new ApiResponse("Login successful"));
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of(
-                            "error", "UNVERIFIED_ACCOUNT",
-                            "message", e.getMessage() // Dynamically show the error from service
+                    .body(new ApiErrorResponse(
+                            "UNVERIFIED_ACCOUNT",
+                            e.getMessage()
                     ));
         } catch (Exception e) {
-            // Handle invalid password/email specifically
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid credentials"));
+                    .body(new ApiResponse("Invalid credentials"));
         }
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logoutUser() {
-        // Overwrite the cookie with a blank value and a 0 lifespan
+    public ResponseEntity<ApiResponse> logoutUser() {
         ResponseCookie cleanCookie = ResponseCookie.from("jwt_token", "")
                 .httpOnly(true)
                 .secure(false) // Set to true in production
@@ -112,6 +114,6 @@ public class AuthApiController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cleanCookie.toString())
-                .body("Logged out successfully");
+                .body(new ApiResponse("Logged out successfully"));
     }
 }

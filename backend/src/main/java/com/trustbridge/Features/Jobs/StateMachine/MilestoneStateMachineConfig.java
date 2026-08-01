@@ -4,6 +4,8 @@ import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.MilestoneStatus.milestoneStatus;
 import com.trustbridge.Domain.Enums.MilestoneEvent.milestoneEvent;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
+import com.trustbridge.Features.Notifications.Services.EmailSenderService;
+import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +28,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
 
     private final MilestoneRepository milestoneRepository;
     private final PaymentRequestService paymentRequestService;
+    private final EmailServiceImpl emailService;
 
     @Override
     public void configure(StateMachineStateConfigurer<milestoneStatus, milestoneEvent> states) throws Exception {
@@ -122,6 +125,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
             UUID milestoneId = context.getMessageHeaders().get("milestoneId", UUID.class);
             // In reality, you would inject an EmailService here and call it
             // TODO: Inject EmailService here!
+
             System.out.println("ACTION FIRED: Sending email to Freelancer for Milestone " + milestoneId + " - Funds secured, start working!");
         };
     }

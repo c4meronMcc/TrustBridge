@@ -28,7 +28,6 @@ public class EmailServiceImpl implements EmailSenderService {
     private String senderEmail;
 
     @Override
-    // 🚨 1. Replaced 'String textBody' with 'UUID relatedEntityId'
     public void sendEmail(String toAddress, String subject, EmailTemplateType emailTemplateType, String htmlBody, UUID relatedEntityId) {
 
         log.info("Connecting to SMTP server to send email to: {}", toAddress);
