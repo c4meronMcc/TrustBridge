@@ -1,9 +1,12 @@
 package com.trustbridge.Features.Jobs.StateMachine;
 
 import com.trustbridge.Domain.Entities.Milestones;
+import com.trustbridge.Domain.Entities.Users;
+import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Enums.MilestoneStatus.milestoneStatus;
 import com.trustbridge.Domain.Enums.MilestoneEvent.milestoneEvent;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
+import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     private final MilestoneRepository milestoneRepository;
     private final PaymentRequestService paymentRequestService;
     private final EmailServiceImpl emailService;
+    private final UserRepository userRepository;
 
     @Override
     public void configure(StateMachineStateConfigurer<milestoneStatus, milestoneEvent> states) throws Exception {
@@ -125,9 +129,16 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     public Action<milestoneStatus, milestoneEvent> notifyFreelancerToStartAction() {
         return context -> {
             UUID milestoneId = context.getMessageHeaders().get("milestoneId", UUID.class);
-            // In reality, you would inject an EmailService here and call it
-            // TODO: Inject EmailService here!
+            Users freelancer = userRepository.getById(context.getMessageHeaders().get("freelancerId", UUID.class));
+            String body = "This is a test email body. Please ignore. JOB ACCEPTED (CHANGE THIS TO HTML BODY)";
 
+            emailService.sendEmail(
+                    freelancer.getEmail(),
+                    "x",
+                    EmailTemplateType.MILESTONE_FUNDED_FREELANCER_NOTICE,
+                    body,
+                    milestoneId
+            );
             Logger.getLogger("ACTION FIRED: Sending email to Freelancer for Milestone " + milestoneId + " - Funds secured, start working!");
         };
     }
