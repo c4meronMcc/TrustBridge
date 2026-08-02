@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/payment-requests")
@@ -19,7 +20,6 @@ public class PaymentRequestController {
     private final PaymentRequestService paymentRequestService;
     private final MilestoneRepository milestoneRepository;
 
-    // TODO: change payment intent so that it is created when milestone is created
     @PostMapping("/initiate")
     public ResponseEntity<PaymentRequestResponse> initiatePayment(@RequestBody Map<String, String> payload) {
         try {
@@ -29,7 +29,7 @@ public class PaymentRequestController {
                     .orElseThrow(() -> new RuntimeException("Milestone not found!"));
 
 //            PaymentRequestResponse response = paymentRequestService.createPaymentRequest(milestones);
-            System.out.println("ACTION FIRED: Payment Request created for Milestone " + milestoneId);
+            Logger.getLogger("ACTION FIRED: Payment Request created for Milestone " + milestoneId);
 //            return ResponseEntity.ok(response);
             return ResponseEntity.ok().build();
         } catch (Exception e) {

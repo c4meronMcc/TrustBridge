@@ -103,7 +103,6 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
                 .guard(jobDisputeResolvedGuard());
     }
 
-    // TODO: Develop all core logic for the guarded states similar to the one below
     @Bean
     public Guard<jobStatus, jobEvent> isClientApprovingGuard() {
         return context -> {

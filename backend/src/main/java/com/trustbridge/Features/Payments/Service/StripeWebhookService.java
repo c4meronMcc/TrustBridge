@@ -3,6 +3,7 @@ package com.trustbridge.Features.Payments.Service;
 import com.stripe.model.Account;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.checkout.Session;
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Entities.StripeAccount;
 import com.trustbridge.Domain.Entities.StripeWebhookLogs;
@@ -31,6 +32,7 @@ public class StripeWebhookService {
     private final PaymentStateService paymentStateService;
     private final ApplicationEventPublisher eventPublisher;
     private final StripeAccountRepository stripeAccountRepository;
+    private final MilestoneRepository milestoneRepository;
 
     @Transactional
     public void handlePaymentIntentSucceeded(Event event) {
@@ -142,9 +144,59 @@ public class StripeWebhookService {
         }
     }
 
+    /**
+     * Handle the checkout.session.completed event
+     * @param stripeEvent
+     */
     public void handleCheckoutSessionCompleted(Event stripeEvent) {
-        // Placeholder for future checkout flows
         // TODO: Implement checkout session completion logic
+        String eventId = stripeEvent.getId();
+
+        // Check if the event has already been processed - if it has, skip processing
+        if (webhookLogsRepository.existsByStripeEventId(eventId)) {
+            log.info("Idempotency trigger: Webhook event {} has already been processed. Ignoring.", eventId);
+            return;
+        }
+
+        try {
+            Session session = null;
+
+            if (stripeEvent.getDataObjectDeserializer().getObject().isPresent()) { // check that the object is present
+                session = (Session) stripeEvent.getDataObjectDeserializer().getObject().get(); // break down the event into a Session object
+            } else if (stripeEvent.getDataObjectDeserializer().getRawJson() != null) { // fallback to raw JSON parsing
+                session = com.stripe.net.ApiResource.GSON.fromJson(
+                        stripeEvent.getDataObjectDeserializer().getRawJson(),
+                        Session.class
+                );
+            }
+
+            // Check if the session is null
+            if (session == null) {
+                throw new IllegalStateException("Deserialisation failed. Payload could not be parsed into a Session.");
+            }
+
+            // extract the metadata from the session
+            String paymentRequestIdStr = session.getMetadata() != null ? session.getMetadata().get("payment_request_id") : null;
+            String milestoneIdStr = session.getMetadata() != null ? session.getMetadata().get("milestone_id") : null;
+
+            // check if the metadata is present
+            if (paymentRequestIdStr == null || milestoneIdStr == null) {
+                log.warn("Missing metadata for event {}", eventId);
+                saveAuditLog(eventId, stripeEvent.getType(), "FAILED", "Missing metadata");
+                return;
+            }
+
+            // check if event status is "paid" and if so change the state of the payment request in the database
+            if ("paid".equals(session.getPaymentStatus())) {
+                log.info("Payment for session {} completed successfully.", session.getId());
+                // TODO: Handle payment completion logic here (Change the state of the payment request)
+            }
+        } catch (Exception e) {
+            log.error("Error processing checkout session completed event: {}", e.getMessage());
+            saveAuditLog(eventId, stripeEvent.getType(), "FAILED", e.getMessage());
+            throw e;
+        }
+
         log.info("Checkout session completed for event {}", stripeEvent.getId());
     }
 
