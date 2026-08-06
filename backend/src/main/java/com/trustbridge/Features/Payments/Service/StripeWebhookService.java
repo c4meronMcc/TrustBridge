@@ -4,15 +4,13 @@ import com.stripe.model.Account;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
-import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Entities.StripeAccount;
 import com.trustbridge.Domain.Entities.StripeWebhookLogs;
-import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Enums.StripeWebhookProcessingStatus;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.StripeAccountRepository;
 import com.trustbridge.Domain.Repositories.StripeWebhookLogsRepository;
-import com.trustbridge.Features.Notifications.Listeners.PaymentEmailListener;
+import com.trustbridge.Features.Payments.Events.MilestoneCompleteEvent;
 import com.trustbridge.Features.Payments.Events.MilestoneFundedEvent;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -49,9 +47,7 @@ public class StripeWebhookService {
             // 1. Try standard deserialization first
             if (event.getDataObjectDeserializer().getObject().isPresent()) {
                 paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().get();
-            }
-            // 2. 💥 THE FIX: Fallback to raw JSON parsing for Open Banking payloads
-            else if (event.getDataObjectDeserializer().getRawJson() != null) {
+            } else if (event.getDataObjectDeserializer().getRawJson() != null) {
                 paymentIntent = com.stripe.net.ApiResource.GSON.fromJson(
                         event.getDataObjectDeserializer().getRawJson(),
                         PaymentIntent.class
@@ -62,7 +58,6 @@ public class StripeWebhookService {
                 throw new IllegalStateException("Deserialisation failed. Payload could not be parsed into a PaymentIntent.");
             }
 
-            // 3. 💥 THE TYPO FIX: Ensure exact case matching with your builder
             String paymentRequestIdStr = paymentIntent.getMetadata().get("payment_request_id");
             String milestoneIdStr = paymentIntent.getMetadata().get("milestone_id");
 
@@ -145,11 +140,10 @@ public class StripeWebhookService {
     }
 
     /**
-     * Handle the checkout.session.completed event
+     *
      * @param stripeEvent
      */
     public void handleCheckoutSessionCompleted(Event stripeEvent) {
-        // TODO: Implement checkout session completion logic
         String eventId = stripeEvent.getId();
 
         // Check if the event has already been processed - if it has, skip processing
@@ -189,15 +183,21 @@ public class StripeWebhookService {
             // check if event status is "paid" and if so change the state of the payment request in the database
             if ("paid".equals(session.getPaymentStatus())) {
                 log.info("Payment for session {} completed successfully.", session.getId());
-                // TODO: Handle payment completion logic here (Change the state of the payment request)
+
+                MilestoneCompleteEvent milestoneCompleteEvent = new MilestoneCompleteEvent(this, UUID.fromString(milestoneIdStr));
+                eventPublisher.publishEvent(milestoneCompleteEvent);
+            } else {
+                log.info("Session {} completed but payment status is '{}'. Escrow not yet funded.", session.getId(), session.getPaymentStatus());
             }
+
+            saveAuditLog(eventId, stripeEvent.getType(), "PROCESSED", null);
+            log.info("Checkout session completed for event {}", stripeEvent.getId());
+
         } catch (Exception e) {
             log.error("Error processing checkout session completed event: {}", e.getMessage());
             saveAuditLog(eventId, stripeEvent.getType(), "FAILED", e.getMessage());
             throw e;
         }
-
-        log.info("Checkout session completed for event {}", stripeEvent.getId());
     }
 
     private void saveAuditLog(String stripeEventId, String type, String status, String errorMessage) {
