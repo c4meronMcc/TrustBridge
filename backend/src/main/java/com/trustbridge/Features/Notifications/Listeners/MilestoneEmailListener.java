@@ -5,12 +5,12 @@ import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Notifications.Services.TemplateEngineService;
-import com.trustbridge.Features.Payments.Events.MilestoneFundedEvent;
+import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Map;
@@ -18,25 +18,28 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class PaymentEmailListener {
+public class MilestoneEmailListener {
 
     private final MilestoneRepository milestoneRepository;
-    private final EmailServiceImpl paymentEmailServiceImpl;
+    private final EmailServiceImpl emailServiceImpl;
     private final TemplateEngineService templateEngineService;
 
     /**
-     * Sends an email to the Freelancer when a Milestone is funded
+     * Sends an email to the Freelancer when a Milestone is submitted for approval
      *
      * @param event hands over the necessary data for the method to send the email
      * @author Cameron Mccreadie Chaplin
-     */
+     * **/
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onMilestoneFunded(MilestoneFundedEvent event) {
-        log.info("received alert for Milestone Funding {}. Preparing email...", event.getMilestoneId());
+    @TransactionalEventListener
+    public void handleFreelancerSubmitsMilestone(MilestoneSubmittedForApprovalEvent event) {
+        log.info("received alert for Milestone Submission {}. Preparing email...", event.getMilestoneId());
 
         Milestones milestone = milestoneRepository.findById(event.getMilestoneId()).orElseThrow();
+
         String freelancerEmail = milestone.getJob().getFreelancer().getEmail();
+        log.info("sending email to {}", freelancerEmail);
+
 
         Map<String, Object> emailData = Map.of(
                 "freelancerName", milestone.getJob().getFreelancer().getFirstName() + " " + milestone.getJob().getFreelancer().getLastName(),
@@ -45,18 +48,18 @@ public class PaymentEmailListener {
                 "milestoneTitle", milestone.getTitle()
         );
 
-        String htmlBody = templateEngineService.processTemplate("milestone-paid.html", emailData);
+        String htmlBody = templateEngineService.processTemplate("freelancer-submitted-milstone-email.html", emailData);
 
-        paymentEmailServiceImpl.sendEmail(
+        emailServiceImpl.sendEmail(
                 freelancerEmail,
-        "Payment Received",
-                EmailTemplateType.MILESTONE_FUNDED_FREELANCER_NOTICE,
+                "Milestone Awaiting Your Approval",
+                EmailTemplateType.WORK_SUBMITTED_FOR_REVIEW,
                 htmlBody,
                 milestone.getId()
         );
 
-        log.info("✅ Email successfully sent to Freelancer!");
-    }
+        log.info("Email successfully sent to Freelancer!");
 
+    }
 
 }
