@@ -1,97 +1,72 @@
-# TrustBridge: Agnostic Escrow Orchestrator
+# TrustBridge
 
-TrustBridge is a vertical-agnostic, milestone-based escrow payment routing layer. Engineered to sit between service providers and clients, it ensures funds are securely held and programmatically released only when pre-defined, mutually agreed-upon milestones are met.
+TrustBridge is a secure, milestone-based escrow payment routing platform designed to bridge the trust gap between service providers and clients. Built as a vertical-agnostic infrastructure layer, TrustBridge allows users to lock funds securely via direct bank rails and release them automatically or manually upon successful milestone completion.
 
-Rather than relying on manual payment verification, TrustBridge utilizes strict state-machine logic and Stripe's virtual IBAN infrastructure to automate secure, low-fee transactions for complex B2B and freelance agreements.
+Think of it as Stripe, but built from the ground up for secure escrow and programmable payment routing.
 
-## 🚀 Key Features
+## 🚀 Features
 
-* **Hierarchical State Machine (HSM) Orchestration:** Payment milestones are strictly governed by state machines, preventing invalid workflow transitions (e.g., releasing funds before a milestone is cryptographically signed off).
-* **Virtual IBAN Payment Routing:** Integrates deeply with Stripe using virtual IBANs to dramatically lower transaction fees compared to standard credit card processing, optimizing for high-volume escrow holds.
-* **Database Webhooks & Integrity:** Utilizes real-time database webhooks to synchronize payment states between Stripe and the local database, ensuring high data consistency and zero double-spends.
-* **Vertical-Agnostic Design:** Built as a headless orchestration layer, allowing seamless integration into any industry that requires milestone-based trust (freelance, software development, supply chain, etc.).
+- **Vertical-Agnostic Escrow**: Designed to integrate seamlessly across any industry—whether for freelancers, digital marketplaces, or corporate service agreements.
+- **Direct Pay-by-Bank Integration**: Eliminates the overhead of virtual IBANs by using direct, open-banking payment rails linked straight to major financial institutions.
+- **Milestone-Based Routing**: Funds are tied to specific, measurable project milestones, ensuring transparency and security for both parties.
+- **Turnkey & Developer-Friendly**: Built with a clean API architecture, making it easy to drop into existing platforms as a dedicated payment layer.
 
-## 🛠️ Architecture & Tech Stack
+## 🛠️ Tech Stack & Architecture
 
-* **Backend core:** Java 21 & Spring Boot
-* **Frontend interface:** Next.js (React)
-* **Database:** PostgreSQL / MariaDB
-* **Payments/API:** Stripe API & Webhooks
-* **State Management:** Custom Java Finite State Machine implementation
+TrustBridge is built with high performance, strict types, and robust architectural patterns in mind:
 
-## 🧠 Engineering Decisions & Business Logic
+- **Backend**: Java / Spring Boot
+- **Architecture**: Event-driven design utilizing State Machines to handle complex, immutable payment lifecycles safely.
+- **Payment Rail**: Open Banking APIs (Pay-by-Bank)
 
-When engineering TrustBridge, a primary constraint was minimizing transaction costs for users holding large sums in escrow. Standard payment processors take a high percentage-based cut. By engineering the backend to leverage **virtual IBANs**, TrustBridge mimics localized bank transfers, capping fees and making the escrow model financially viable for users.
+## 🔄 How It Works
 
-Furthermore, the application logic is fully decoupled from the UI. The Spring Boot backend acts as an agnostic API, meaning the Next.js frontend can be entirely swapped or embedded directly into a third-party client's existing software via API keys.
+```
+[ Client ] --(1. Initiates Pay-by-Bank)--> [ TrustBridge Escrow State Machine ]
+                                                          |
+                                            (2. Holds Funds Securely)
+                                                          |
+[ Provider ] --(3. Completes Milestone)-------------------+
+                                                          |
+                                            (4. Routes Released Funds)
+                                                          v
+                                                    [ Provider Bank ]
+```
 
-## ⚙️ Local Setup & Development
+1. **Agreement**: Client and Provider agree on milestones and payment terms.
+2. **Funding**: The client funds the milestone securely using a direct pay-by-bank transfer.
+3. **State Locked**: TrustBridge locks the funds, moving the transaction state to `FUNDED`.
+4. **Handoff / Release**: Once the milestone criteria are met, the state transitions, and funds are instantly routed directly to the provider's bank account.
+
+## 💻 Getting Started
 
 ### Prerequisites
 
-* Java 21+
-* Node.js (for Next.js frontend)
-* PostgreSQL / MariaDB instance running locally
-* Stripe Developer Account (for API testing keys)
+- Java 17 or higher
+- Maven / Gradle
+- Access to your configured Open Banking sandboxes/credentials
 
-### Backend (Spring Boot) Setup
+### Installation
 
 1. Clone the repository:
-   ```
+
+   ```bash
    git clone https://github.com/yourusername/trustbridge.git
-   ```
-2. Navigate to the backend directory:
-   ```
-   cd trustbridge-api
-   ```
-3. Configure your local environment variables in `src/main/resources/application-dev.yml`:
-   ```yaml
-   spring.datasource.url: jdbc:postgresql://localhost:5432/trustbridge
-   stripe.api.key: sk_test_...
-   stripe.webhook.secret: whsec_...
-   ```
-4. Build the project:
-   ```
-   ./gradlew build
-   ```
-   or
-   ```
-   mvn clean install
-   ```
-5. Run the application:
-   ```
-   ./gradlew bootRun
+   cd trustbridge
    ```
 
-### Frontend (Next.js) Setup
+2. Configure your environment variables in `application.yml` (e.g., database connections, banking API keys).
 
-1. Navigate to the web directory:
-   ```
-   cd trustbridge-web
-   ```
-2. Install dependencies:
-   ```
-   npm install
-   ```
-3. Configure your `.env.local` file with the backend API URL.
-4. Run the development server:
-   ```
-   npm run dev
+3. Build and run the application:
+
+   ```bash
+   ./mvnw spring-boot:run
    ```
 
-## 🧪 Testing
+## 🛡️ Security & Compliance
 
-The backend is highly covered by unit and integration tests, particularly around the state machine transitions and webhook idempotency.
+TrustBridge treats transaction states as absolute law. By leveraging a strict backend state machine framework, it prevents race conditions, double-spending, or unauthorized fund releases. All direct bank communication adheres strictly to Open Banking standards.
 
-Run the test suite via:
-```
-./gradlew test
-```
-or
-```
-mvn test
-```
+## 📄 License
 
----
-
-Developed by Cameron Mccreadie Chaplin. For professional inquiries regarding backend architecture or Spring Boot development, feel free to reach out.
+Copyright © 2026 Cameron Mccreadie Chaplin. All rights reserved.
