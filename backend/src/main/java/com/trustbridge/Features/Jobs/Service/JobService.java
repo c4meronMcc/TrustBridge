@@ -40,10 +40,15 @@ public class JobService {
     private final PaymentRequestService paymentRequestService;
 
 
-
-
+    /**
+     * Processes the creation of a new job offer by generating an invite token,
+     * creating or retrieving the client user, saving the job information,
+     * and sending a notification email if applicable.
+     *
+     * @param dto the data transfer object containing details of the job offer
+     * @param authenticatedEmail the email address of the authenticated user initiating the process
+     */
     @Transactional
-    // Add the email parameter here
     public void processNewJobOffer(@Valid JobCreationDto dto, String authenticatedEmail) {
         String token = generateInviteToken();
         String BASE_URL = "http://localhost:3000/invite/"; // Pointing to Next.js frontend
@@ -63,6 +68,17 @@ public class JobService {
         }
     }
 
+    /**
+     * Saves a new job into the system based on the provided job creation details.
+     *
+     * @param dto the job creation details containing the job title, description, amount, currency,
+     *            and optional milestones
+     * @param token a unique token used for job invitation
+     * @param client the client user associated with the job
+     * @param authenticatedEmail the email of the authenticated freelancer user who will be assigned to the job
+     * @return the created job instance
+     * @throws RuntimeException if the freelancer is not found, or if the milestone total does not equal the job amount
+     */
     @Transactional
     public Jobs  saveNewJob(@Valid JobCreationDto dto, String token, Users client, String authenticatedEmail) {
         Users freelancer = userRepository.findByEmail(authenticatedEmail)
@@ -99,6 +115,15 @@ public class JobService {
         return newJob;
     }
 
+    /**
+     * Saves a draft job using the provided job creation details and authenticated email.
+     *
+     * @param dto The job creation details, including title, description, client email, amount, currency, and milestones.
+     *            Must be a valid {@link JobCreationDto}.
+     * @param authenticatedEmail The email of the authenticated user creating the draft job.
+     *                           This email is used to identify the freelancer associated with the draft job.
+     * @throws RuntimeException If the total amount of the milestones does not equal the job amount.
+     */
     @Transactional
     public void saveDraftJob(@Valid @RequestBody JobCreationDto dto, String authenticatedEmail){
         Users freelancer = userRepository.findByEmail(authenticatedEmail).orElse(null);
@@ -127,6 +152,14 @@ public class JobService {
         }
     }
 
+    /**
+     * Deletes a draft job identified by its unique job ID.
+     * This method will only delete a job if its status is set to DRAFT.
+     * If the job is not found or its status is not DRAFT, an exception is thrown.
+     *
+     * @param jobId the unique identifier of the job to be deleted, which must be in DRAFT status
+     * @throws RuntimeException if the job is not found or its status is not DRAFT
+     */
     @Transactional
     public void deleteDraftJob(@Valid @RequestBody UUID jobId) {
 
@@ -140,25 +173,33 @@ public class JobService {
         jobRepository.delete(job);
     }
 
+    /**
+     * Activates a job identified by the provided invite token. The method transitions
+     * the job to an active state if it's in a pending state or validates that it is
+     * awaiting payment. It also retrieves the client secret for the first milestone
+     * associated with the job to facilitate payment.
+     *
+     * @param inviteToken the unique token that identifies the job to be activated
+     * @return a {@code PaymentActivationDto} containing the client secret for the
+     *         first milestone of the job
+     * @throws RuntimeException if the invite token is invalid, no milestones are found for the job,
+     *                          or a Stripe token could not be generated
+     * @throws IllegalStateException if the job*/
     @Transactional
     public PaymentActivationDto activateJob(String inviteToken) {
         Jobs job = jobRepository.findByInviteToken(inviteToken)
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
 
-        // IDEMPOTENCY CHECK
         if (job.getStatus() == jobStatus.PENDING_ACCEPTANCE) {
             jobStateService.pendingToActive(job.getId(), inviteToken);
         } else if (job.getStatus() != jobStatus.AWAITING_PAYMENT) {
             throw new IllegalStateException("Job cannot be accepted in its current state.");
         }
 
-        // 💥 THE FIX: Just ask for the very first milestone, ignoring the status check.
-        // The state machine is currently handling the status, we just need the ID!
         Milestones firstMilestone = milestoneRepository
                 .findFirstByJobIdOrderBySequenceOrderAsc(job.getId()) // 👈 Update this query
                 .orElseThrow(() -> new RuntimeException("No milestones found for this job."));
 
-        // Now that we have the ID, we can fetch the token that the PaymentService just saved
         String clientSecret = paymentRequestService.getClientSecretForMilestone(firstMilestone.getId());
 
         if (clientSecret == null) {
@@ -168,6 +209,11 @@ public class JobService {
         return new PaymentActivationDto(clientSecret);
     }
 
+    /**
+     * Updates the status of a job to PAID_OUT for the given job ID.
+     *
+     * @param jobId the unique identifier of the job to be updated; must be a valid UUID
+     */
     @Transactional
     public void jobStatusToComplete(@Valid @RequestBody UUID jobId) {
         Jobs job = checkJobExists(jobId);
@@ -176,6 +222,11 @@ public class JobService {
         jobRepository.save(job);
     }
 
+    /**
+     * Updates the status of a job to CANCELLED for the given job ID.
+     *
+     * @param jobId the unique identifier of the job whose status is to be updated
+     */
     @Transactional
     public void jobStatusToCancelled(@Valid @RequestBody UUID jobId) {
         Jobs job = checkJobExists(jobId);
@@ -184,6 +235,11 @@ public class JobService {
         jobRepository.save(job);
     }
 
+    /**
+     * Updates the status of a job to PENDING_ACCEPTANCE for the given job ID.
+     *
+     * @param jobId the unique identifier of the job to be updated
+     */
     @Transactional
     public void jobStatusToPendingAccepted(@Valid @RequestBody UUID jobId) {
         Jobs job = checkJobExists(jobId);
@@ -192,6 +248,8 @@ public class JobService {
         jobRepository.save(job);
     }
 
+    /**
+     * Updates the status of a*/
     @Transactional
     public void jobStatusToActive(@Valid @RequestBody UUID jobId) {
         Jobs job = checkJobExists(jobId);
@@ -201,9 +259,13 @@ public class JobService {
     }
 
     /**
-     * function to change the status to disputed
-     * waiting to update the database before I can uncomment this!**/
-
+     * Updates the status of a job to 'DISPUTED' for the given job ID.
+     * This method is transactional and ensures atomicity of the operation.
+     *
+     * @param jobId the unique identifier of the job to be updated
+     *              provided as a valid UUID
+     * @throws RuntimeException if the specified job is not found
+     */
     @Transactional
     public void jobStatusToDisputed(@Valid @RequestBody UUID jobId) {
         Jobs job = jobRepository.findById(jobId)
@@ -213,6 +275,13 @@ public class JobService {
         jobRepository.save(job);
     }
 
+    /**
+     * Sends a notification email to the client with the details of a job invitation.
+     *
+     * @param dto        the data transfer object containing job creation details such as title and client email
+     * @param inviteLink the link to invite the client to the job
+     * @param jobId      the unique identifier of the job
+     */
     @Async
     protected void sendNotificationEmail(JobCreationDto dto, String inviteLink, UUID jobId) {
         String body = buildEmailTemplate(dto, inviteLink);
@@ -220,6 +289,14 @@ public class JobService {
         System.out.println("Automated email sent to: " + dto.clientEmail());
     }
 
+    /**
+     * Builds and returns an HTML email template string for a new project proposal.
+     *
+     * @param dto Data transfer object containing details about the job creation,
+     *            including client name, project title, description, currency, and amount.
+     * @param inviteLink The link to review and accept the proposal, included in the email body.
+     * @return A formatted HTML string representing the email template.
+     */
     private String buildEmailTemplate(JobCreationDto dto, String inviteLink) {
         String logoUrl = "https://github.com/c4meronMcc/TrustBridge/blob/jobcreation/assets/TrustBridgeLogo.png?raw=true";
 
@@ -277,14 +354,32 @@ public class JobService {
         );
     }
 
+    /**
+     * Generates a random alphanumeric token to be used as an invite token.
+     *
+     * @return A 64-character long random alphanumeric string.
+     */
     public String generateInviteToken() {
         return RandomStringUtils.randomAlphanumeric(64);
     }
 
+    /**
+     * Checks if the provided email string is non-null and not blank.
+     *
+     * @param email the email string to check
+     * @return {@code true} if the email is non-null and not blank, {@code false} otherwise
+     */
     private boolean hasEmail(String  email) {
         return email != null && !email.isBlank();
     }
 
+    /**
+     * Validates whether the total amount of all milestones matches the job amount.
+     *
+     * @param milestones the list of milestone creation DTOs containing individual milestone amounts
+     * @param job the job creation DTO containing the total job amount
+     * @return true if the total amount of milestones does not equal the job amount, false otherwise
+     */
     private boolean milestoneTotalValid(List<JobCreationDto.MilestoneCreationDto> milestones, JobCreationDto job) {
 
         List<BigDecimal> milestonesAmounts = milestones.stream()
@@ -304,6 +399,13 @@ public class JobService {
         return false;
     }
 
+    /**
+     * Checks if a job exists in the repository by its unique identifier.
+     *
+     * @param jobId the unique identifier of the job to be checked
+     * @return the job object if it exists in the repository
+     * @throws RuntimeException if no job is found with the given identifier
+     */
     public Jobs checkJobExists(@Valid UUID jobId) {
         Jobs job;
         job = jobRepository.findById(jobId)
