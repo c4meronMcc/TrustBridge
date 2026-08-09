@@ -39,6 +39,15 @@ public class RegistrationService {
         return String.format("%06d", verificationCode);
     };
 
+    /**
+     * Registers a user for pre-verification. This method performs initial user registration tasks,
+     * such as checking if the email is already in use, assigning a user role, and generating a
+     * verification code. A registration event is also published for further processing.
+     *
+     * @param dto The data transfer object containing registration details such as email, password,
+     *            first name, last name, role, and phone number.
+     * @throws RuntimeException If the email is already in use or event creation fails.
+     */
     @Transactional
     public void registerPreVerification(RegistrationDTO dto) {
 
@@ -86,6 +95,17 @@ public class RegistrationService {
         eventPublisher.publishEvent(event);
     }
 
+    /**
+     * Completes the post-verification process for a user registration. This method validates the
+     * verification code provided by the user, ensuring that it matches the code stored in the system
+     * and has not expired. If the validation is successful, the user is marked as verified.
+     *
+     * @param dto The data transfer object containing the user's email and the verification code
+     *            provided by the user.
+     * @throws IllegalStateException If the user is already verified.
+     * @throws IllegalArgumentException If the verification code is null, expired, or does not
+     *                                  match the stored code.
+     */
     @Transactional
     public void registerPostVerification(RegistrationVerificationDTO dto) {
 
@@ -114,6 +134,15 @@ public class RegistrationService {
         userRepository.save(user);
     }
 
+    /**
+     * Resets the verification code for a user identified by their email address. This method generates
+     * a new verification code and updates the expiry time for the code. If the user is already verified,
+     * an exception is thrown. Additionally, a user registration event is published after the code is reset.
+     *
+     * @param email The email address of the user whose verification code needs to be reset.
+     * @throws IllegalStateException If the user is already verified.
+     * @throws IllegalArgumentException If the user does not exist.
+     */
     @Transactional
     public void resetVerificationCode(String email) {
         log.info("Resetting verification code for user: {}", email);
@@ -138,6 +167,13 @@ public class RegistrationService {
         eventPublisher.publishEvent(event);
     }
 
+    /**
+     * Ensures that a client with the specified email exists in the system. If the client
+     * does not already exist, a new guest user is created using the provided job creation details.
+     *
+     * @param email the email address of the client to check or create
+     * @param dto the data transfer object containing job creation details
+     */
     private void ensureClientExists(String email, JobCreationDto dto) {
         if (userRepository.findByEmail(email).isEmpty()) {
             // This relies on your RegistrationService to handle the heavy lifting
@@ -145,6 +181,13 @@ public class RegistrationService {
         }
     }
 
+    /**
+     * Checks if a user exists in the system based on the provided email.
+     *
+     * @param email the email of the user to check
+     * @return the user object if found
+     * @throws IllegalArgumentException if no user is found with the provided email
+     */
     private Users checkUserExists(String email) {
         Users user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -152,6 +195,13 @@ public class RegistrationService {
         return user;
     }
 
+    /**
+     * Creates and saves a guest user with the provided details from the JobCreationDto.
+     *
+     * @param dto the data transfer object containing client information such as email, phone number,
+     *            first name, and last name, used to create the guest user
+     * @return the newly created guest user
+     */
     @Transactional
     public Users createGuestUser(JobCreationDto dto) {
 
