@@ -26,8 +26,15 @@ public class InviteApiController {
     private final MilestoneRepository milestoneRepository;
     private final JobService jobService;
 
+    /**
+     * Retrieves the details of an invite based on the provided token.
+     *
+     * @param token the unique identifier for the invite, used to look up the job details
+     * @return a ResponseEntity containing the details of the invite as an InviteResponseWebDto object
+     *         including job title, description, client and freelancer information, total amount,
+     *         currency, client email (if available), the status of the client, and associated milestones
+     */
     @GetMapping("/{token}")
-    // 🚨 Fixed return type to exactly match your DTO name
     public ResponseEntity<InviteResponseWebDto> getInviteDetails(@PathVariable String token) {
         Jobs job = jobRepository.findByInviteToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
@@ -57,7 +64,7 @@ public class InviteApiController {
                 job.getFreelancer().getEmail(),
                 job.getTotalAmount(),
                 job.getCurrency(),
-                client != null ? client.getEmail() : null, // 🚨 Safely handled potential NullPointerException
+                client != null ? client.getEmail() : null,
                 status,
                 milestoneDtos
         );
@@ -65,13 +72,21 @@ public class InviteApiController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Accepts an invite and activates the corresponding job based on the provided token.
+     *
+     * @param token the unique identifier for the invite, used to activate the related job
+     * @return a ResponseEntity containing a PaymentActivationDto object representing the activated job details,
+     *         or a bad request status if the activation fails
+     */
     @PostMapping("/accepted/{token}")
     public ResponseEntity<PaymentActivationDto> acceptInvite(@PathVariable String token) {
-        // Call the idempotent service method we just built
         PaymentActivationDto responseData = jobService.activateJob(token);
 
-        // Spring Boot's Jackson library will automatically convert this Map
-        // into valid JSON: {"clientSecret": "pi_123..."}
+        if (responseData == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
         return ResponseEntity.ok(responseData);
     }
 }
