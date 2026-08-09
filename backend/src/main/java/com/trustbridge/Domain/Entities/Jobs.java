@@ -1,4 +1,4 @@
-package com.trustbridge.Domain.Entities;
+    package com.trustbridge.Domain.Entities;
 
 import com.trustbridge.Domain.Enums.JobStatus.jobStatus;
 import jakarta.persistence.*;

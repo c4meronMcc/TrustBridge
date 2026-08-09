@@ -75,6 +75,7 @@ CREATE TABLE payment_requests (
       amount DECIMAL(19, 4) NOT NULL,
       status VARCHAR(50) DEFAULT 'PENDING'
           CHECK (status IN ('PENDING', 'PROCESSING', 'PAID', 'FAILED', 'EXPIRED', 'CANCELLED', 'REFUNDED')),
+      payment_method_type VARCHAR(50) NOT NULL,
       expires_at TIMESTAMPTZ NOT NULL,
       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -108,13 +109,28 @@ CREATE TABLE bank_payment_sessions (
 );
 
 CREATE TYPE email_status AS ENUM ('PENDING', 'SENT', 'DELIVERED', 'FAILED', 'BOUNCED');
-CREATE TYPE email_template_type AS ENUM ('MILESTONE_FUNDING_REQUEST', 'PAYMENT_RECEIPT', 'ESCROW_RELEASED');
+CREATE TYPE email_template_type AS ENUM (
+    'WELCOME_FREELANCER',
+    'WELCOME_CLIENT',
+    'PASSWORD_RESET',
+    'JOB_INVITATION',
+    'MILESTONE_FUNDING_REQUEST',
+    'MILESTONE_FUNDED_FREELANCER_NOTICE',
+    'WORK_SUBMITTED_FOR_REVIEW',
+    'PAYMENT_RECEIPT',
+    'PAYMENT_PROCESSED',
+    'REFUND_PROCESSED',
+    'DISPUTE_OPENED',
+    'DISPUTE_EVIDENCE_OPENED',
+    'DISPUTE_RESOLVED'
+);
 
 CREATE TABLE email_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     recipient_email VARCHAR(255) NOT NULL,
     template_type email_template_type NOT NULL,
     related_entity_id UUID NOT NULL,
+    subject TEXT NOT NULL,
     status email_status NOT NULL,
     provider_message_id TEXT,
     error_message TEXT,

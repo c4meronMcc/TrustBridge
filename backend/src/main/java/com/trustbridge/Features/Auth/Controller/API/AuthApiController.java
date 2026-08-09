@@ -1,18 +1,27 @@
 package com.trustbridge.Features.Auth.Controller.API;
 
-import com.trustbridge.Features.Auth.Dto.LoginDto;
-import com.trustbridge.Features.Auth.Dto.RegistrationDTO;
-import com.trustbridge.Features.Auth.Dto.RegistrationVerificationDTO;
-import com.trustbridge.Features.Auth.RegistrationService;
+import com.trustbridge.Features.Auth.Dto.*;
+import com.trustbridge.Features.Auth.Service.LoginService;
+import com.trustbridge.Security.JwtService;
+import com.trustbridge.Security.JwtTokenProvider;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import com.trustbridge.Features.Auth.Service.RegistrationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 
 @RestController
 @RequestMapping("api/auth")
@@ -20,27 +29,142 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthApiController {
 
     private final RegistrationService registrationService;
+    private final LoginService loginService;
     private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private Authentication auth;
+    private ApiResponse apiResponse;
 
+    String message = "message";
+    String error = "error";
+
+    /**
+     * Handles the registration of a new user by processing the provided registration details.
+     * The method delegates the pre-verification logic to the registration service and returns
+     * a response indicating the success of the operation.
+     *
+     * @param request a {@link RegistrationDTO} object containing the user's registration details,
+     *                including email, phone number, password, first name, last name, and role.
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} with a success message
+     *         confirming the user registration.
+     */
     @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody RegistrationDTO dto) {
-        registrationService.registerPreVerification(dto);
-        return ResponseEntity.ok("User registered successfully!");
+    public ResponseEntity<ApiResponse> register(@RequestBody RegistrationDTO request) {
+        registrationService.registerPreVerification(request);
+        return ResponseEntity.ok(new ApiResponse("User registration successful"));
+
     }
 
+    /**
+     * Verifies the provided registration verification code and email.
+     * Delegates the post-verification logic to the registration service
+     * and returns a success message upon successful verification.
+     *
+     * @param dto a {@link RegistrationVerificationDTO} object containing the verification code
+     *            and the associated email address.
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} with a success message
+     *         confirming the user's verification.
+     */
     @PostMapping("/verificationCode")
-    public ResponseEntity<String> verifyCode(@Valid @RequestBody RegistrationVerificationDTO dto) {
+    public ResponseEntity<ApiResponse> verifyCode(@Valid @RequestBody RegistrationVerificationDTO dto) {
         registrationService.registerPostVerification(dto);
-        return ResponseEntity.ok("User verified successfully!");
+
+        return ResponseEntity.ok(new ApiResponse("User verified successfully!"));
     }
 
+    /**
+     * Resends the verification code to the user's email address.
+     * This method delegates the logic to reset and send a new verification code
+     * to the {@code registrationService}.
+     *
+     * @param email the email address of the user to whom the verification code should be resent.
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} with a success message
+     *         indicating that the verification code has been resent successfully.
+     */
+    @PostMapping("/resendVerificationCode")
+    public ResponseEntity<ApiResponse> resendVerificationCode(@RequestBody String email) {
+        registrationService.resetVerificationCode(email);
+
+        return ResponseEntity.ok(new ApiResponse("Verification code resent successfully!"));
+    }
+
+    /**
+     * Authenticates the user based on the provided login credentials.
+     * If authentication is successful, generates a JWT token, sets it as a cookie,
+     * and returns a success response. In case of failed authentication, returns an appropriate error response.
+     *
+     * @param dto a {@link LoginDto} object containing the user's login credentials,
+     *            including email and password.
+     * @return a {@link ResponseEntity} containing one of the following:
+     *         - an {@link ApiResponse} with a success message and the JWT token set as a cookie,
+     *           if the login is successful.
+     *         - an {@link ApiErrorResponse} with an error code and message, if the account is unverified.
+     *         - an {@link ApiResponse} with an error message, if the credentials are invalid.
+     */
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginDto dto) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(dto.email(), dto.password())
-        );
+    public ResponseEntity<Object> login(@Valid @RequestBody LoginDto dto) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                            dto.email(),
+                            dto.password()
+                    )
+            );
 
-        return ResponseEntity.ok("Successfully logged in!");
+            loginService.login(dto);
+
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String jwt = jwtService.generateToken(userDetails);
+
+            Logger.getLogger("AuthApiController").info("AT BIRTH LOGIN COOKIE: " + jwt);
+
+            int cookieMaxAge = 24 * 60 * 60;
+
+            ResponseCookie springCookie = ResponseCookie.from("jwt_token", jwt)
+                    .httpOnly(true)
+                    .secure(false) // Set to true in production
+                    .path("/")
+                    .maxAge(cookieMaxAge)
+                    .sameSite("Lax")
+                    .build();
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, springCookie.toString())
+                    .body(new ApiResponse("Login successful"));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiErrorResponse(
+                            "UNVERIFIED_ACCOUNT",
+                            e.getMessage()
+                    ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse("Invalid credentials"));
+        }
     }
 
+    /**
+     * Logs out the current user by invalidating the JWT token cookie.
+     * The method clears the token by setting a cookie with the same name and
+     * a maximum age of zero, effectively removing it from the client.
+     *
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} with a success
+     *         message indicating that the user has been logged out successfully.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse> logoutUser() {
+        ResponseCookie cleanCookie = ResponseCookie.from("jwt_token", "")
+                .httpOnly(true)
+                .secure(false) // Set to true in production
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cleanCookie.toString())
+                .body(new ApiResponse("Logged out successfully"));
+    }
 }

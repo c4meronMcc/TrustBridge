@@ -9,11 +9,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -54,15 +56,33 @@ public class JobStateService {
         return sm;
     }
 
-    public void fireEvent(UUID jobId, jobEvent event) {
+    public void fireEvent(UUID jobId, jobEvent event, Map<String, Object> additionalHeaders) {
         StateMachine<jobStatus, jobEvent> sm = buildStateMachine(jobId);
 
-        Message<jobEvent> message = MessageBuilder
+        // 1. Build the base message with the required ID
+        MessageBuilder<jobEvent> builder = MessageBuilder
                 .withPayload(event)
-                .setHeader("jobId", jobId)
-                .build();
+                .setHeader("jobId", jobId);
 
-        sm.sendEvent(Mono.just(message)).subscribe();
+        // 2. Dynamically inject any extra data the specific state requires!
+        if (additionalHeaders != null && !additionalHeaders.isEmpty()) {
+            builder.copyHeaders(additionalHeaders);
+        }
+
+        // 3. Fire it safely and capture the Result Object
+        var result = sm.sendEvent(Mono.just(builder.build())).blockLast();
+
+        // 4. Extract the boolean by checking the ResultType
+        boolean accepted = result != null && result.getResultType() == StateMachineEventResult.ResultType.ACCEPTED;
+
+        if (!accepted) {
+            throw new IllegalStateException("Guard blocked the transition for event: " + event);
+        }
+    }
+
+    // The Convenience Wrapper (Keeps your old code from breaking!)
+    public void fireEvent(UUID jobId, jobEvent event) {
+        this.fireEvent(jobId, event, null);
     }
 
     // UN-GUARDED STATE TRANSITIONS
@@ -78,8 +98,8 @@ public class JobStateService {
         fireEvent(jobId, jobEvent.CANCEL_JOB);
     }
 
-    public void pendingToActive(UUID jobId) {
-        fireEvent(jobId, jobEvent.ACCEPT_OFFER);
+    public void pendingToActive(UUID jobId, String inviteToken) {
+        fireEvent(jobId, jobEvent.ACCEPT_OFFER, Map.of("inviteToken", inviteToken));
     }
 
     public void submissionRevoked(UUID jobId) {

@@ -4,7 +4,7 @@ import com.trustbridge.Domain.Entities.Users;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Auth.Events.UserRegistrationEvent;
-import com.trustbridge.Features.Notifications.Services.EmailService;
+import com.trustbridge.Features.Notifications.Services.EmailSenderService;
 import com.trustbridge.Features.Notifications.Services.TemplateEngineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import java.util.Map;
 public class AuthEmail {
 
     private final UserRepository userRepository;
-    private final EmailService emailService;
+    private final EmailSenderService emailSenderService;
     private final TemplateEngineService templateEngineService;
 
     @Async
@@ -37,13 +37,14 @@ public class AuthEmail {
                 "verification", user.getVerificationCode()
         );
 
-        String htmlBody = templateEngineService.processTemplate("example.html", emailData);
+        String htmlBody = templateEngineService.processTemplate("verification-email.html", emailData);
 
-        emailService.sendEmail(
+        emailSenderService.sendEmail(
                 userEmail,
                 "Verify Account",
                 EmailTemplateType.WELCOME_FREELANCER,
-                htmlBody
+                htmlBody,
+                user.getId()
         );
 
         log.info("Email successfully sent to " + user.getUserRole().name());

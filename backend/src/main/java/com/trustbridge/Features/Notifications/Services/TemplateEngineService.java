@@ -13,6 +13,12 @@ public class TemplateEngineService {
 
     private final TemplateEngine thymeleafTemplateEngine;
 
+    /**
+     * Helper method to process a Thymeleaf template with the given variables.
+     * @param templateName The name of the template file (without the .html extension)
+     * @param variables The variables to be passed to the template
+     * @author Cameron Mccreadie Chaplin
+     * **/
     public String processTemplate(String templateName, Map<String, Object> variables) {
 
         Context context = new Context();

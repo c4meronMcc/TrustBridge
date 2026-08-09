@@ -1,9 +1,17 @@
 package com.trustbridge.Features.Jobs.StateMachine;
 
+import com.trustbridge.Domain.Entities.Jobs;
+import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.JobEvent.*;
 import com.trustbridge.Domain.Enums.JobStatus.*;
+import com.trustbridge.Domain.Enums.MilestoneStatus;
+import com.trustbridge.Domain.Repositories.JobRepository;
+import com.trustbridge.Domain.Repositories.MilestoneRepository;
+import com.trustbridge.Features.Jobs.Service.MilestoneStateService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
@@ -11,10 +19,19 @@ import org.springframework.statemachine.config.builders.StateMachineTransitionCo
 import org.springframework.statemachine.guard.Guard;
 
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Configuration
 @EnableStateMachineFactory(name = "JobStateMachineFactory")
+@RequiredArgsConstructor
 public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<jobStatus, jobEvent> {
+
+    final private JobRepository jobRepository;
+    final private MilestoneStateService milestoneStateService;
+    final private MilestoneRepository milestoneRepository;
+
     @Override
     public void configure(StateMachineStateConfigurer<jobStatus, jobEvent> states) throws Exception {
         states
@@ -53,6 +70,7 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
                 .source(jobStatus.PENDING_ACCEPTANCE).target(jobStatus.AWAITING_PAYMENT)
                 .event(jobEvent.ACCEPT_OFFER)
                 .guard(isClientApprovingGuard())
+                .action(triggerFirstMilestoneAction())
                 .and()
                 .withExternal()
                 .source(jobStatus.AWAITING_PAYMENT).target(jobStatus.IN_PROGRESS)
@@ -85,13 +103,43 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
                 .guard(jobDisputeResolvedGuard());
     }
 
-    // TODO: Develop all core logic for the guarded states similar to the one below
-
     @Bean
     public Guard<jobStatus, jobEvent> isClientApprovingGuard() {
         return context -> {
-            Boolean isClientApproving = context.getMessageHeaders().get("isClientApproving", Boolean.class);
-            return isClientApproving != null && isClientApproving;
+            UUID jobId = context.getMessageHeaders().get("jobId", UUID.class);
+            String providedToken = context.getMessageHeaders().get("inviteToken", String.class);
+
+            if (jobId == null || providedToken == null) {
+                System.out.println("🛡️ Guard Blocked: Missing token or Job ID.");
+                return false;
+            }
+
+            Jobs job = jobRepository.findById(jobId).orElse(null);
+
+            if (job == null) {
+                return false;
+            }
+
+            // 3. ZERO-TRUST CHECK: Does the provided token exactly match the database token?
+            boolean isAuthorized = providedToken.equals(job.getInviteToken());
+
+            if (!isAuthorized) {
+                System.out.println("🚨 SECURITY ALERT: Invalid token used attempting to release funds on Job " + jobId);
+            }
+
+            return isAuthorized;
+        };
+    }
+
+    @Bean
+    public Action<jobStatus, jobEvent> triggerFirstMilestoneAction() {
+        return context -> {
+            UUID jobId = context.getMessageHeaders().get("jobId", UUID.class);
+
+            if (jobId != null) {
+                // The service handles finding out if it's the 1st, 2nd, or 10th milestone
+                milestoneStateService.activateNextLockedMilestoneForJob(jobId);
+            }
         };
     }
 
@@ -110,8 +158,23 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
     @Bean
     public Guard<jobStatus, jobEvent> allMilestonesCompleted() {
         return context -> {
-            Boolean isAllMilestonesCompleted = (Boolean) context.getMessageHeaders().get("isAllMilestonesCompleted");
-            return isAllMilestonesCompleted != null && isAllMilestonesCompleted;
+            UUID jobId = context.getMessageHeaders().get("jobId", UUID.class);
+            if (jobId == null) return false;
+
+            // Zero-Trust Check: Does the database contain ANY milestones for this job
+            // that are NOT in a finished state?
+            boolean hasUnfinishedWork = milestoneRepository.existsByJobIdAndStatusNotIn(
+                    jobId,
+                    List.of(MilestoneStatus.milestoneStatus.PAID_OUT, MilestoneStatus.milestoneStatus.CANCELLED)
+            );
+
+            // If there is NO unfinished work, the guard passes (returns true)
+            if (hasUnfinishedWork) {
+                System.out.println("🛡️ Guard Blocked: Cannot submit job. Unfinished milestones exist.");
+                return false;
+            }
+
+            return true;
         };
     }
 

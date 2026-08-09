@@ -3,7 +3,7 @@ package com.trustbridge.Features.Notifications.Listeners;
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
-import com.trustbridge.Features.Notifications.Services.EmailService;
+import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Notifications.Services.TemplateEngineService;
 import com.trustbridge.Features.Payments.Events.MilestoneFundedEvent;
 import lombok.RequiredArgsConstructor;
@@ -21,13 +21,14 @@ import java.util.Map;
 public class PaymentEmailListener {
 
     private final MilestoneRepository milestoneRepository;
-    private final EmailService paymentEmailService;
+    private final EmailServiceImpl paymentEmailServiceImpl;
     private final TemplateEngineService templateEngineService;
 
     /**
-     * @Async tells Spring to run this on a separate background thread.
-     * @TransactionalEventListener ensures we ONLY send the email AFTER the database
-     *                             has successfully saved the Milestone as PAID.
+     * Sends an email to the Freelancer when a Milestone is funded
+     *
+     * @param event hands over the necessary data for the method to send the email
+     * @author Cameron Mccreadie Chaplin
      */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -46,11 +47,12 @@ public class PaymentEmailListener {
 
         String htmlBody = templateEngineService.processTemplate("milestone-paid.html", emailData);
 
-        paymentEmailService.sendEmail(
+        paymentEmailServiceImpl.sendEmail(
                 freelancerEmail,
         "Payment Received",
                 EmailTemplateType.MILESTONE_FUNDED_FREELANCER_NOTICE,
-                htmlBody
+                htmlBody,
+                milestone.getId()
         );
 
         log.info("✅ Email successfully sent to Freelancer!");

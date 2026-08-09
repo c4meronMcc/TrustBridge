@@ -349,7 +349,7 @@ export default function HomePage() {
               <Plug size={28} color="#1ED760" className="mb-6" />
               <h3 className="font-bold mb-2">Stack Triggers</h3>
               <p className="text-white/55 text-sm leading-[1.6]">
-                Link GitHub or Trello. Merge a PR or move a card to "Done" to release payments automatically.
+                Link GitHub or Trello. Merge a PR or move a card to &#34;Done&#34; to release payments automatically.
               </p>
             </article>
           </div>

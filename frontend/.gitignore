@@ -72,7 +72,7 @@ apps/expo/android
 .turbo
 build/**
 
-.env.local
+apps/next/.env.local
 .env
 .env.*.local
 

@@ -1,6 +1,5 @@
 package com.trustbridge.Features.Notifications.Services;
 
-
 import com.trustbridge.Domain.Entities.EmailLog;
 import com.trustbridge.Domain.Enums.EmailStatus;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
@@ -14,25 +13,22 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID; // 🚨 Make sure to import UUID
+
 @Slf4j
 @Service
-@Profile("prod")
+@Profile("!prod")
 @RequiredArgsConstructor
-public class EmailService implements EmailSenderServiceImpl {
+public class EmailServiceImpl implements EmailSenderService {
 
-    private JavaMailSender mailSender;
-    private EmailLogRepository auditLogRepository;
+    private final JavaMailSender mailSender;
+    private final EmailLogRepository auditLogRepository;
 
     @Value("${spring.mail.username}")
     private String senderEmail;
 
-    public EmailService(JavaMailSender mailSender, EmailLogRepository auditLogRepository) {
-        this.mailSender = mailSender;
-        this.auditLogRepository = auditLogRepository;
-    }
-
     @Override
-    public void sendEmail(String toAddress, String subject, EmailTemplateType emailTemplateType, String htmlBody) {
+    public void sendEmail(String toAddress, String subject, EmailTemplateType emailTemplateType, String htmlBody, UUID relatedEntityId) {
 
         log.info("Connecting to SMTP server to send email to: {}", toAddress);
 
@@ -40,8 +36,8 @@ public class EmailService implements EmailSenderServiceImpl {
                 .recipientEmail(toAddress)
                 .subject(subject)
                 .templateType(emailTemplateType)
+                .relatedEntityId(relatedEntityId) // 🚨 2. Attach the Job ID to the audit log!
                 .build();
-
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -67,7 +63,7 @@ public class EmailService implements EmailSenderServiceImpl {
             auditLog.setErrorMessage(e.getMessage());
             auditLogRepository.save(auditLog);
 
-            throw new RuntimeException("Failed to send email: " + e.getMessage());
+            throw new RuntimeException("Failed to send email: " + e.getMessage() + " Failed to log auditLog");
         }
     }
 }

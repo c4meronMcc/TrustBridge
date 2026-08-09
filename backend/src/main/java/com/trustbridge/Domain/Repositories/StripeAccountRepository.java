@@ -12,4 +12,5 @@ public interface StripeAccountRepository extends JpaRepository<StripeAccount, UU
     Optional<StripeAccount> findByUserId(UUID userId);
     Optional<Boolean> existsByUserId(UUID userId);
     Optional<String> findCustomerIdByUserId(UUID userId);
+    Optional<StripeAccount> findBystripeAccountId(String stripeAccountId);
 }
