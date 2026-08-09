@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
 @RestController
 @RequestMapping("api/auth")
 @RequiredArgsConstructor
@@ -38,6 +39,16 @@ public class AuthApiController {
     String message = "message";
     String error = "error";
 
+    /**
+     * Handles the registration of a new user by processing the provided registration details.
+     * The method delegates the pre-verification logic to the registration service and returns
+     * a response indicating the success of the operation.
+     *
+     * @param request a {@link RegistrationDTO} object containing the user's registration details,
+     *                including email, phone number, password, first name, last name, and role.
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} with a success message
+     *         confirming the user registration.
+     */
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@RequestBody RegistrationDTO request) {
         registrationService.registerPreVerification(request);
@@ -45,6 +56,16 @@ public class AuthApiController {
 
     }
 
+    /**
+     * Verifies the provided registration verification code and email.
+     * Delegates the post-verification logic to the registration service
+     * and returns a success message upon successful verification.
+     *
+     * @param dto a {@link RegistrationVerificationDTO} object containing the verification code
+     *            and the associated email address.
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} with a success message
+     *         confirming the user's verification.
+     */
     @PostMapping("/verificationCode")
     public ResponseEntity<ApiResponse> verifyCode(@Valid @RequestBody RegistrationVerificationDTO dto) {
         registrationService.registerPostVerification(dto);
@@ -52,6 +73,15 @@ public class AuthApiController {
         return ResponseEntity.ok(new ApiResponse("User verified successfully!"));
     }
 
+    /**
+     * Resends the verification code to the user's email address.
+     * This method delegates the logic to reset and send a new verification code
+     * to the {@code registrationService}.
+     *
+     * @param email the email address of the user to whom the verification code should be resent.
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} with a success message
+     *         indicating that the verification code has been resent successfully.
+     */
     @PostMapping("/resendVerificationCode")
     public ResponseEntity<ApiResponse> resendVerificationCode(@RequestBody String email) {
         registrationService.resetVerificationCode(email);
@@ -59,6 +89,19 @@ public class AuthApiController {
         return ResponseEntity.ok(new ApiResponse("Verification code resent successfully!"));
     }
 
+    /**
+     * Authenticates the user based on the provided login credentials.
+     * If authentication is successful, generates a JWT token, sets it as a cookie,
+     * and returns a success response. In case of failed authentication, returns an appropriate error response.
+     *
+     * @param dto a {@link LoginDto} object containing the user's login credentials,
+     *            including email and password.
+     * @return a {@link ResponseEntity} containing one of the following:
+     *         - an {@link ApiResponse} with a success message and the JWT token set as a cookie,
+     *           if the login is successful.
+     *         - an {@link ApiErrorResponse} with an error code and message, if the account is unverified.
+     *         - an {@link ApiResponse} with an error message, if the credentials are invalid.
+     */
     @PostMapping("/login")
     public ResponseEntity<Object> login(@Valid @RequestBody LoginDto dto) {
         try {
@@ -102,6 +145,14 @@ public class AuthApiController {
         }
     }
 
+    /**
+     * Logs out the current user by invalidating the JWT token cookie.
+     * The method clears the token by setting a cookie with the same name and
+     * a maximum age of zero, effectively removing it from the client.
+     *
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} with a success
+     *         message indicating that the user has been logged out successfully.
+     */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse> logoutUser() {
         ResponseCookie cleanCookie = ResponseCookie.from("jwt_token", "")
