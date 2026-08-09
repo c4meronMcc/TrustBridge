@@ -22,6 +22,22 @@ public class DashboardService {
     private final UserRepository userRepository;
     private final StripeAccountRepository stripeAccountRepository;
 
+    /**
+     * Retrieves and assembles dashboard data for a freelancer based on their email.
+     *
+     * @param email the email of the freelancer whose dashboard data is to be retrieved
+     * @return a {@code DashboardDataDto} containing the freelancer's dashboard information, including:
+     *         <li>- User details (first name, last name)</li>
+     *         <li>- Trust score</li>
+     *         <li>- Payouts status</li>
+     *         <li>- Financial metrics (funds in escrow holding, funds pending, funds paid out)</li>
+     *         <li>- Earning graph data over the last 12 months</li>
+     *         <li>- Top 5 active jobs</li>
+     *         <li>- Top 5 jobs awaiting payment</li>
+     *         <li>- Top 5 jobs with recent activity</li>
+     *         <li>- Recent activity feed</li>
+     * @throws RuntimeException if no user is found associated with the provided email
+     */
     public DashboardDataDto getDashboardData(String email) {
 
         Users user = userRepository.findByEmail(email)
@@ -60,6 +76,15 @@ public class DashboardService {
         ));
     }
 
+    /**
+     * Generates an activity feed based on a list of recent milestones.
+     * The activity feed includes key events and descriptions for display in the UI.
+     *
+     * @param recentMilestones a list of {@code Milestones} objects representing the most recent milestones
+     *                         associated with a freelancer's jobs
+     * @return a list of {@code AuditLogEntryDto} objects, where each entry contains the event details
+     *         including event type, description, associated milestone, and other related metadata
+     */
     private List<AuditLogEntryDto> generateActivityFeed(List<Milestones> recentMilestones) {
         return recentMilestones.stream().map(m -> {
 
