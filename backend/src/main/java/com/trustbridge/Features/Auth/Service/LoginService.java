@@ -19,6 +19,14 @@ public class LoginService {
     private final UserDetailsService userDetailsService; // Safely loads the Spring Security profile
     private final JwtService jwtService; // Our new token generator
 
+    /**
+     * Authenticates a user based on the provided credentials, verifies the user's account status,
+     * and generates a JWT token upon successful authentication.
+     *
+     * @param dto the login data transfer object containing the user's email and password
+     * @return a JWT token as a string if the login and verification process is successful
+     * @throws RuntimeException if the user is not found or if the account is not verified
+     */
     public String login(LoginDto dto) {
 
         authenticationManager.authenticate(
