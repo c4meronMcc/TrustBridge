@@ -35,11 +35,24 @@ public class SecurityConfig {
     @Value("${cors.allowed-origins}")
     private String[] allowedOrigins;
 
+    /**
+     * Configures web security to ignore specific request matchers.
+     *
+     * @return a {@code WebSecurityCustomizer} instance that specifies the paths to be ignored by the security filter chain.
+     */
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().requestMatchers("/api/v1/webhooks/**");
     }
 
+    /**
+     * Configures the security filter chain for the application, including CORS, CSRF, stateless session management,
+     * request authorization, and JWT authentication filtering.
+     *
+     * @param http the {@link HttpSecurity} object used to configure web-based security in the application.
+     * @return a {@link SecurityFilterChain} instance that defines the security configuration for the application.
+     * @throws Exception if there is a failure during security configuration setup.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -59,6 +72,16 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Provides a CORS configuration source used to define behavior for handling
+     * cross-origin resource sharing (CORS) in the application.
+     *
+     * Configures allowed origins, HTTP methods, headers, and credentials to ensure
+     * secure communication between the client and server. The configuration is registered
+     * for all endpoints in the application.
+     *
+     * @return a {@link CorsConfigurationSource} instance containing the configured CORS rules.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -82,11 +105,33 @@ public class SecurityConfig {
         return source;
     }
 
+    /**
+     * Creates and provides an {@link AuthenticationManager} bean for the application.
+     *
+     * This method retrieves the authentication manager from the given {@link AuthenticationConfiguration}.
+     * The {@link AuthenticationManager} is responsible for handling authentication requests
+     * and integrating with configured authentication providers.
+     *
+     * @param config the {@link AuthenticationConfiguration} object that contains the security configuration
+     *               for authentication management.
+     * @return the {@link AuthenticationManager} instance configured for the application.
+     * @throws Exception if an error occurs while accessing the authentication manager from the configuration.
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+
+    /**
+     * Provides a {@link PasswordEncoder} bean for encoding and verifying passwords.
+     *
+     * This method returns an instance of {@link BCryptPasswordEncoder}, which
+     * uses the BCrypt hashing algorithm to securely hash passwords. BCrypt is
+     * designed to be computationally intensive to protect against brute force attacks.
+     *
+     * @return a {@link PasswordEncoder} instance for handling password encryption.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
