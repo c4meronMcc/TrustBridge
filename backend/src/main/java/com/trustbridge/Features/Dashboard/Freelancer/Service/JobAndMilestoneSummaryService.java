@@ -22,6 +22,17 @@ public class JobAndMilestoneSummaryService {
     private final JobRepository jobRepository;
     private final MilestoneRepository milestoneRepository;
 
+    /**
+     * Retrieves a job and its associated milestone summary for a freelancer based on their email and job ID.
+     *
+     * @param email the email address of the freelancer, used to identify the user in the system.
+     * @param jobId the unique identifier of the job in UUID format for which the summary is being requested.
+     * @return a {@link JobAndMilestoneData} object containing the job summary and a list of milestone summaries for the specified job.
+     * @throws RuntimeException if the user with the given email does not exist.
+     * @throws RuntimeException if the provided job ID is not a valid UUID.
+     * @throws RuntimeException if the job with the given ID does not exist.
+     * @throws RuntimeException if the user is not the freelancer of the specified job.
+     */
     public JobAndMilestoneData getJobAndMilestoneSummary(String email, String jobId) {
 
         Users user = userRepository.findByEmail(email)
