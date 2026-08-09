@@ -1,6 +1,7 @@
 package com.trustbridge.Features.Auth;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -35,8 +36,8 @@ public class GlobalExceptionHandler {
      * @param ex the BadCredentialsException to be handled, typically triggered during authentication failures
      * @return a ResponseEntity with an HTTP 401 Unauthorized status and a message indicating invalid credentials
      */
-    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
-    public ResponseEntity<String> handleBadCredentials(org.springframework.security.authentication.BadCredentialsException ex) {
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<String> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(401).body("Invalid email or password");
     }
 }
