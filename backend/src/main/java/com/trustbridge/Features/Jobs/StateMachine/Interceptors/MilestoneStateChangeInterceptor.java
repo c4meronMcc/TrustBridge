@@ -21,6 +21,17 @@ public class MilestoneStateChangeInterceptor extends StateMachineInterceptorAdap
     @Autowired
     MilestoneRepository milestoneRepository;
 
+    /**
+     * Handles pre-state change events in the milestone state machine by updating the associated
+     * milestone entity in the database. This ensures the milestone's status is updated
+     * based on the transition to the new state, as part of the state machine's execution lifecycle.
+     *
+     * @param state the new state to which the milestone transitions
+     * @param message the message triggering the state transition, containing headers and payload information
+     * @param transition the transition object representing the state change
+     * @param stateMachine the state machine managing the milestone's state transitions
+     * @param rootStateMachine the root state machine associated with the hierarchical structure of state machines
+     */
     @Override
     public void preStateChange(State<milestoneStatus, milestoneEvent> state,
                                Message<milestoneEvent> message,

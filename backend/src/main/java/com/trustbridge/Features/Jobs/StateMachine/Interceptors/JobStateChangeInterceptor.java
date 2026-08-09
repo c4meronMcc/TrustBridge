@@ -22,6 +22,17 @@ public class JobStateChangeInterceptor extends StateMachineInterceptorAdapter<jo
     @Autowired
     JobRepository jobRepository;
 
+    /**
+     * Handles pre-state change events in the job state machine by updating the corresponding
+     * job entity in the database. This method ensures that the job's status is updated
+     * based on the transition to the new state, as part of the state machine's lifecycle.
+     *
+     * @param state the new state to which the job transitions
+     * @param message the message triggering the state transition, containing headers and payload information
+     * @param transition the transition object representing the state change
+     * @param stateMachine the current state machine managing the job's state transitions
+     * @param rootStateMachine the root state machine associated with the hierarchical structure of state machines
+     */
     @Override
     public void preStateChange(State<jobStatus, jobEvent> state,
                                Message<jobEvent> message,

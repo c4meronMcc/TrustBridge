@@ -32,6 +32,15 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
     final private MilestoneStateService milestoneStateService;
     final private MilestoneRepository milestoneRepository;
 
+    /**
+     * Configures the state machine with the initial state and all possible job states.
+     * This method sets the initial state to {@code DRAFT} and registers all states
+     * from the {@link jobStatus} enum to be part of the state machine.
+     *
+     * @param states the {@link StateMachineStateConfigurer} used to define states
+     *               and initial configuration for the state machine
+     * @throws Exception if an error occurs during state configuration
+     */
     @Override
     public void configure(StateMachineStateConfigurer<jobStatus, jobEvent> states) throws Exception {
         states
@@ -40,6 +49,14 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
                 .states(EnumSet.allOf(jobStatus.class));
     }
 
+    /**
+     * Configures the state transitions for the job state machine.
+     * This method defines both unguarded and guarded transitions between states
+     * based on specific events and optional guards or actions.
+     *
+     * @param transitions the {@link StateMachineTransitionConfigurer} used to define state transitions
+     * @throws Exception if an error occurs during transition configuration
+     */
     @Override
     public void configure(StateMachineTransitionConfigurer<jobStatus, jobEvent> transitions) throws Exception {
         // UN-GUARDED STATE TRANSITIONS
@@ -103,6 +120,18 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
                 .guard(jobDisputeResolvedGuard());
     }
 
+    /**
+     * Guard implementation that checks whether a client is authorized to approve a job
+     * by validating the provided invite token against the expected token stored in the database.
+     * This method follows a zero-trust policy to ensure only the correct token allows progression.
+     *
+     * The guard retrieves the `jobId` and `inviteToken` from the context's message headers,
+     * fetches the associated job from the database using the `jobId`, and compares the provided
+     * token with the job's stored token. If any validation fails, the guard blocks progress.
+     *
+     * @return a Guard instance that evaluates to {@code true} if the client is authorized to proceed,
+     *         or {@code false} otherwise.
+     */
     @Bean
     public Guard<jobStatus, jobEvent> isClientApprovingGuard() {
         return context -> {
@@ -131,6 +160,16 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
         };
     }
 
+    /**
+     * Triggers the action of progressing the locked milestone state for a specific job.
+     * This method attempts to activate the next locked milestone for the job by
+     * utilizing the {@code milestoneStateService}. The job identifier is retrieved
+     * from the state machine context's message headers. If the identifier is found,
+     * the next locked milestone is unlocked for the job.
+     *
+     * @return an {@link Action} implementation that processes the state machine context
+     *         to unlock the next milestone for the job when invoked.
+     */
     @Bean
     public Action<jobStatus, jobEvent> triggerFirstMilestoneAction() {
         return context -> {
@@ -143,6 +182,14 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
         };
     }
 
+    /**
+     * Guard implementation that checks whether the first milestone payment has been made.
+     * This guard evaluates the `milestoneSequence` and `isFunded` headers from the state machine's message context.
+     * The guard returns {@code true} if the `milestoneSequence` equals 1 and `isFunded` is {@code true}.
+     *
+     * @return a Guard instance that evaluates to {@code true} if the first milestone is paid,
+     *         or {@code false} otherwise.
+     */
     @Bean
     public Guard<jobStatus, jobEvent> firstMilestonePaidGuard() {
         return context -> {
@@ -155,6 +202,19 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
         };
     }
 
+    /**
+     * Guard implementation that verifies whether all milestones associated with a job
+     * have been completed. This method implements a zero-trust policy by checking if
+     * there are any milestones for the job that are not in a finished state.
+     *
+     * The guard retrieves the `jobId` from the state machine context's message headers
+     * and queries the `milestoneRepository` to check for unfinished milestones. If no
+     * milestones are in an unfinished state, this guard passes (returns {@code true}).
+     * Otherwise, it blocks the state transition (returns {@code false}).
+     *
+     * @return a Guard instance that evaluates to {@code true} if all milestones are completed
+     *         (no milestones in unfinished states), or {@code false} otherwise.
+     */
     @Bean
     public Guard<jobStatus, jobEvent> allMilestonesCompleted() {
         return context -> {
@@ -178,6 +238,15 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
         };
     }
 
+    /**
+     * Guard implementation that checks whether a job has been approved.
+     * This guard examines the `isJobApproved` flag from the state machine's message headers.
+     * If the flag is present and evaluates to {@code true}, the guard allows the state transition.
+     * Otherwise, the transition is blocked.
+     *
+     * @return a Guard instance that evaluates to {@code true} if the job is approved,
+     *         or {@code false} otherwise.
+     */
     @Bean
     public Guard<jobStatus, jobEvent> jobApprovedGuard() {
         return context -> {
@@ -186,6 +255,15 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
         };
     }
 
+    /**
+     * Guard implementation that determines whether a job is eligible for release.
+     * This guard evaluates the `isJobReleased` flag from the state machine's message headers.
+     * If the flag is present and evaluates to {@code true}, the guard allows the state transition.
+     * Otherwise, the transition is blocked.
+     *
+     * @return a Guard instance that evaluates to {@code true} if the job is released,
+     *         or {@code false} otherwise.
+     */
     @Bean
     public Guard<jobStatus, jobEvent> jobReleasedGuard() {
         return context -> {
@@ -194,6 +272,15 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
         };
     }
 
+    /**
+     * Guard implementation that checks whether a job is marked as disputed.
+     * This guard evaluates the `isJobDisputed` flag from the state machine's message headers.
+     * If the flag is present and evaluates to {@code true}, the guard allows the state transition.
+     * Otherwise, the transition is blocked.
+     *
+     * @return a Guard instance that evaluates to {@code true} if the job is disputed,
+     *         or {@code false} otherwise.
+     */
     @Bean
     public Guard<jobStatus, jobEvent> jobDisputedGuard() {
         return context -> {
@@ -202,6 +289,15 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
         };
     }
 
+    /**
+     * Guard implementation that checks whether a job dispute has been resolved.
+     * This guard evaluates the `isJobDisputeResolved` flag from the state machine's message headers.
+     * If the flag is present and evaluates to {@code true}, the guard allows the state transition.
+     * Otherwise, the transition is blocked.
+     *
+     * @return a Guard instance that evaluates to {@code true} if the job dispute has been resolved,
+     *         or {@code false} otherwise.
+     */
     @Bean
     public Guard<jobStatus, jobEvent> jobDisputeResolvedGuard() {
         return context -> {

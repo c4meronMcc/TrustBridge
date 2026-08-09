@@ -21,6 +21,17 @@ public class DisputeStateChangeInterceptor extends StateMachineInterceptorAdapte
     @Autowired
     DisputeRepository disputeRepository;
 
+    /**
+     * Handles state changes in the dispute state machine by updating the corresponding
+     * dispute entity in the database. Ensures that the dispute's state is updated
+     * according to the transition performed in the state machine.
+     *
+     * @param state the new state of the dispute after the transition
+     * @param message the message triggering the event, containing additional headers and payload
+     * @param transition the transition object representing the change in state
+     * @param stateMachine the current state machine handling the state transition
+     * @param rootStateMachine the root state machine associated with hierarchical state machines
+     */
     @Override
     public void preStateChange(State<DisputeState, DisputeEvent> state,
                                Message<DisputeEvent> message,
