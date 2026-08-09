@@ -27,7 +27,6 @@ public class JobEmailListener {
      * @author Cameron Mccreadie Chaplin
      * **/
     @Async
-    @TransactionalEventListener
     public void onJobCreation(JobCreationDto dto, String inviteLink, UUID jobId) {
 
         Map<String, Object> emailData = Map.of(
