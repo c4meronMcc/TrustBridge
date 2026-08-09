@@ -21,6 +21,13 @@ public class MilestoneFundedEventListener {
     private final MilestoneRepository milestoneRepository;
     private final JobRepository jobRepository;
 
+    /**
+     * Handles the MilestoneFundedEvent by updating the status of the corresponding milestone
+     * and its associated job (if necessary).
+     *
+     * @param event the MilestoneFundedEvent containing information about the funded milestone,
+     *              including its unique identifier.
+     */
     @EventListener
     @Transactional
     public void handleMilestoneFunded(MilestoneFundedEvent event) {
