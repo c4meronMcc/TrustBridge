@@ -5,17 +5,25 @@ import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
+import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
+import com.trustbridge.Features.Payments.Events.MilestoneFundedEvent;
+import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MilestoneService {
 
     private final MilestoneRepository milestoneRepository;
+    private final MilestoneStateService milestoneStateService;
+    private final MilestoneEmailListener milestoneEmailListener;
 
     /**
      * Creates and saves milestones for a given job based on the provided list of milestone DTOs.
@@ -44,6 +52,18 @@ public class MilestoneService {
 
         milestoneRepository.saveAll(milestones);
 
-        System.out.println("Saved "  + milestones.size() + " milestones for jobId: " + jobs.getId());
+        log.info("Saved {} milestones for jobId: {}", milestones.size(), jobs.getId());
+    }
+
+    public void freelancerSubmittedMilestone(UUID milestoneId) {
+
+        Milestones milestone = milestoneRepository.findById(milestoneId).orElseThrow();
+
+
+        if (milestone.getStatus() != MilestoneStatus.milestoneStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Milestone is not in SUBMITTED_FOR_APPROVAL state");
+        }
+
+        milestoneStateService.moveMilestoneIntoSubmission(milestoneId);
     }
 }

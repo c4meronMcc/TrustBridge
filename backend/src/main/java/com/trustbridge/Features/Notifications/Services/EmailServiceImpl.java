@@ -36,7 +36,7 @@ public class EmailServiceImpl implements EmailSenderService {
                 .recipientEmail(toAddress)
                 .subject(subject)
                 .templateType(emailTemplateType)
-                .relatedEntityId(relatedEntityId) // 🚨 2. Attach the Job ID to the audit log!
+                .relatedEntityId(relatedEntityId)
                 .build();
 
         try {

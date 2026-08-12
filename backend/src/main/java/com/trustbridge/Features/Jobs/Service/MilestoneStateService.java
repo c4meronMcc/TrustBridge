@@ -7,6 +7,7 @@ import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Features.Jobs.StateMachine.Interceptors.MilestoneStateChangeInterceptor;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
@@ -20,6 +21,7 @@ import reactor.core.publisher.Mono;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MilestoneStateService {
@@ -74,11 +76,24 @@ public class MilestoneStateService {
 
         if (nextLockedMilestone.isPresent()) {
             Milestones target = nextLockedMilestone.get();
-            System.out.println("Found next step: Unlocking Milestone " + target.getId() + " (Sequence " + target.getSequenceOrder() + ")");
+            log.info("Found next step: Unlocking Milestone " + target.getId() + " (Sequence " + target.getSequenceOrder() + ")");
 
             this.milestoneActivated(target.getId());
         } else {
-            System.out.println("All milestones for Job " + jobId + " are already unlocked or finished.");
+            log.info("All milestones for Job " + jobId + " are already unlocked or finished.");
+        }
+    }
+
+    @Transactional
+    public void moveMilestoneIntoSubmission(UUID milestoneId) {
+        Milestones milestone = milestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new RuntimeException("Milestone not found!"));
+
+        try {
+            this.workedSubmitted(milestoneId);
+            log.info("Milestone {} moved into SUBMITTED_WORK state", milestone.getId());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

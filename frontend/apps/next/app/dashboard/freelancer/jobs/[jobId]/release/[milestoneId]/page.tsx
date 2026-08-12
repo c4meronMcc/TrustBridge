@@ -114,15 +114,12 @@ export default function RequestReleasePage({
                 }
 
                 setIsLoading(false);
-                return; // Exit early! Zero network latency.
+                return;
             } catch (error) {
                 console.error("Failed to parse stored milestone data:", error);
-                // If parsing fails, fall through to the API fetch below
             }
         }
 
-        // 2. Fallback: Network Fetch
-        // This only runs if they navigate directly via URL or their session expired
         console.log("No valid storage found. Falling back to API fetch...");
 
         try {
@@ -191,10 +188,6 @@ export default function RequestReleasePage({
         processFiles(e.dataTransfer.files);
     };
 
-    // ---------------------------------------------------------------------------
-    // SCOPE CHECKLIST
-    // ---------------------------------------------------------------------------
-
     const addScopeItem = () => {
         if (!newScopeItemText.trim()) return;
         setScopeItems((prev) => [
@@ -235,7 +228,7 @@ export default function RequestReleasePage({
             uploadedFiles.forEach(({ file }) => formData.append("files", file));
 
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/milestone/request-release`,
+                `http://localhost:8080/api/milestone/request-release/freelancer`,
                 { method: "POST", credentials: "include", body: formData }
             );
 

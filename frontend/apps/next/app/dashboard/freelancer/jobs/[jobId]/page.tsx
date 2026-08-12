@@ -84,10 +84,8 @@ export default function JobDetails({ params }: { params?: Promise<{ jobId?: stri
 
             const data: JobAndMilestoneData = await response.json();
 
-            // 1. Set local state for this page
             setApiData(data);
 
-            // 2. Hydrate the Context for the Request Release page
             setJobData(data);
 
         } catch (err: any) {
@@ -102,11 +100,9 @@ export default function JobDetails({ params }: { params?: Promise<{ jobId?: stri
     }, [fetchJobData]);
 
     const handleRequestRelease = (milestoneId: string) => {
-        // 1. Find the specific milestone from your local state
         const targetMilestone = milestones.find(m => m.milestoneId === milestoneId);
 
         if (targetMilestone) {
-            // 2. Build the payload the Request Release page expects
             const payload = {
                 ...targetMilestone,
                 jobTitle: job.title,

@@ -8,7 +8,6 @@ import com.trustbridge.Features.Notifications.Services.TemplateEngineService;
 import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -37,8 +36,8 @@ public class MilestoneEmailListener {
 
         Milestones milestone = milestoneRepository.findById(event.getMilestoneId()).orElseThrow();
 
-        String freelancerEmail = milestone.getJob().getFreelancer().getEmail();
-        log.info("sending email to {}", freelancerEmail);
+        String clientEmail = milestone.getJob().getClient().getEmail();
+        log.info("sending email to {}", clientEmail);
 
 
         Map<String, Object> emailData = Map.of(
@@ -51,6 +50,35 @@ public class MilestoneEmailListener {
         String htmlBody = templateEngineService.processTemplate("freelancer-submitted-milstone-email.html", emailData);
 
         emailServiceImpl.sendEmail(
+                clientEmail,
+                "Milestone Awaiting Your Approval",
+                EmailTemplateType.WORK_SUBMITTED_FOR_REVIEW,
+                htmlBody,
+                milestone.getId()
+        );
+
+        log.info("Email successfully sent to Client!");
+    }
+
+    @Async
+    @TransactionalEventListener
+    public void handleClientReceivesWaitingForApprovalEmail(MilestoneSubmittedForApprovalEvent event) {
+        log.info("received alert for Milestone Submission {}. Preparing email...", event.getMilestoneId());
+
+        Milestones milestone = milestoneRepository.findById(event.getMilestoneId()).orElseThrow();
+        String freelancerEmail = milestone.getJob().getFreelancer().getEmail();
+
+        log.info("sending email to {}", freelancerEmail);
+
+        Map<String, Object> emailData = Map.of(
+                "clientName", milestone.getJob().getClient().getFirstName() + " " + milestone.getJob().getClient().getLastName(),
+                "freelancerName", milestone.getJob().getFreelancer().getFirstName() + " " + milestone.getJob().getFreelancer().getLastName(),
+                "milestoneTitle", milestone.getTitle()
+        );
+
+        String htmlBody = templateEngineService.processTemplate("freelancer-notification-that-client-has-received-email.html", emailData);
+
+        emailServiceImpl.sendEmail(
                 freelancerEmail,
                 "Milestone Awaiting Your Approval",
                 EmailTemplateType.WORK_SUBMITTED_FOR_REVIEW,
@@ -59,7 +87,5 @@ public class MilestoneEmailListener {
         );
 
         log.info("Email successfully sent to Freelancer!");
-
     }
-
 }

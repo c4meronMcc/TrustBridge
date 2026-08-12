@@ -22,8 +22,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class JobApiController {
 
-    JobRepository jobRepository;
-    JobService jobService;
+    private final JobRepository jobRepository;
+    private final JobService jobService;
 
     /**
      * Creates a new job based on the provided details and associates it with the authenticated user.

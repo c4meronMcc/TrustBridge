@@ -16,8 +16,8 @@ import java.util.UUID;
 @Component
 public class JobEmailListener {
 
-    EmailServiceImpl emailServiceImpl;
-    TemplateEngineService templateEngineService;
+    private final EmailServiceImpl emailServiceImpl;
+    private final TemplateEngineService templateEngineService;
 
     /**
      * Sends an email to the Client when a Job is created

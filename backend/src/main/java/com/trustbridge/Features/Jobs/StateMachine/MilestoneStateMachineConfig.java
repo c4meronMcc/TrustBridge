@@ -7,7 +7,9 @@ import com.trustbridge.Domain.Enums.MilestoneStatus.milestoneStatus;
 import com.trustbridge.Domain.Enums.MilestoneEvent.milestoneEvent;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
+import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
+import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +35,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     private final PaymentRequestService paymentRequestService;
     private final EmailServiceImpl emailService;
     private final UserRepository userRepository;
+    private final MilestoneEmailListener milestoneEmailListener;
 
     /**
      * Configures the state machine states for the MilestoneStateMachineConfig.
@@ -92,6 +95,8 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                 .withExternal()
                 .source(milestoneStatus.IN_PROGRESS).target(milestoneStatus.SUBMITTED)
                 .event(milestoneEvent.SUBMITTED_WORK)
+                .action(notifyClientOfFreelancerMilestoneSubmissionAction())
+                .action(notifyFreelancerThatClientApprovalEmailHasSentAction())
                 //Submitted -> In Progress (Revoke Submission)
                 .and()
                 .withExternal()
@@ -143,6 +148,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     }
 
     String guardExecuted = "Guard executed: ";
+    String milestoneIdName = "milestoneId";
 
     /**
      * Executes the action to generate a payment request for a specific milestone.
@@ -160,7 +166,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      */
     @Bean Action<milestoneStatus, milestoneEvent> generatePaymentRequestAction() {
         return context -> {
-            UUID milestoneId = context.getMessageHeaders().get("milestoneId", UUID.class);
+            UUID milestoneId = context.getMessageHeaders().get( milestoneIdName , UUID.class);
 
             Assert .notNull(milestoneId, "Milestone ID is required!");
             Milestones milestones = milestoneRepository.findById(milestoneId)
@@ -192,9 +198,11 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     @Bean
     public Action<milestoneStatus, milestoneEvent> notifyFreelancerToStartAction() {
         return context -> {
-            UUID milestoneId = context.getMessageHeaders().get("milestoneId", UUID.class);
+            UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
             Users freelancer = userRepository.getById(context.getMessageHeaders().get("freelancerId", UUID.class));
             String body = "This is a test email body. Please ignore. JOB ACCEPTED (CHANGE THIS TO HTML BODY)";
+
+
 
             emailService.sendEmail(
                     freelancer.getEmail(),
@@ -204,6 +212,30 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                     milestoneId
             );
             Logger.getLogger("ACTION FIRED: Sending email to Freelancer for Milestone " + milestoneId + " - Funds secured, start working!");
+        };
+    }
+
+    @Bean
+    public Action<milestoneStatus, milestoneEvent> notifyClientOfFreelancerMilestoneSubmissionAction() {
+        return context -> {
+            UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
+
+            MilestoneSubmittedForApprovalEvent event = new MilestoneSubmittedForApprovalEvent(this, milestoneId);
+
+            milestoneEmailListener.handleFreelancerSubmitsMilestone(event);
+            Logger.getLogger("ACTION FIRED: Sending email to Client for Milestone " + milestoneId + " - Freelancer submitted!");
+        };
+    }
+
+    @Bean
+    public Action<milestoneStatus, milestoneEvent> notifyFreelancerThatClientApprovalEmailHasSentAction() {
+        return context -> {
+            UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
+
+            MilestoneSubmittedForApprovalEvent event = new MilestoneSubmittedForApprovalEvent(this, milestoneId);
+
+            milestoneEmailListener.handleClientReceivesWaitingForApprovalEmail(event);
+            Logger.getLogger("ACTION FIRED: Sending email to Freelancer for Milestone " + milestoneId + " - Client approval email sent!");
         };
     }
 

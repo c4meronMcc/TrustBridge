@@ -12,6 +12,7 @@ import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Auth.Service.RegistrationService;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
 import com.trustbridge.Features.Jobs.Dto.PaymentActivationDto;
+import com.trustbridge.Features.Notifications.Listeners.JobEmailListener;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
 import jakarta.transaction.Transactional;
@@ -38,6 +39,7 @@ public class JobService {
     private final JobStateService jobStateService;
     private final MilestoneRepository milestoneRepository;
     private final PaymentRequestService paymentRequestService;
+    private final JobEmailListener jobEmailListener;
 
 
     /**
@@ -64,7 +66,7 @@ public class JobService {
         Jobs savedJob = saveNewJob(dto, token, client, authenticatedEmail);
 
         if (client != null) {
-            sendNotificationEmail(dto, inviteLink, savedJob.getId());
+            jobEmailListener.onJobCreation(dto, inviteLink, savedJob.getId());
         }
     }
 
@@ -197,7 +199,7 @@ public class JobService {
         }
 
         Milestones firstMilestone = milestoneRepository
-                .findFirstByJobIdOrderBySequenceOrderAsc(job.getId()) // 👈 Update this query
+                .findFirstByJobIdOrderBySequenceOrderAsc(job.getId())
                 .orElseThrow(() -> new RuntimeException("No milestones found for this job."));
 
         String clientSecret = paymentRequestService.getClientSecretForMilestone(firstMilestone.getId());
@@ -275,19 +277,7 @@ public class JobService {
         jobRepository.save(job);
     }
 
-    /**
-     * Sends a notification email to the client with the details of a job invitation.
-     *
-     * @param dto        the data transfer object containing job creation details such as title and client email
-     * @param inviteLink the link to invite the client to the job
-     * @param jobId      the unique identifier of the job
-     */
-    @Async
-    protected void sendNotificationEmail(JobCreationDto dto, String inviteLink, UUID jobId) {
-        String body = buildEmailTemplate(dto, inviteLink);
-        emailServiceImpl.sendEmail(dto.clientEmail(), "Project Proposal: " + dto.title(), EmailTemplateType.JOB_INVITATION, body, jobId);
-        System.out.println("Automated email sent to: " + dto.clientEmail());
-    }
+
 
     /**
      * Builds and returns an HTML email template string for a new project proposal.

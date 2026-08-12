@@ -6,14 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Plus, Trash2, ShieldCheck, ArrowRight, Briefcase, AlertCircle } from "lucide-react";
 
-// Mocking useRouter for the preview environment.
-// Uncomment this in production:
-// import { useRouter } from 'next/navigation';
 const useRouter = () => ({
     push: (path: string) => alert(`Navigating to: ${path}`)
 });
 
-// ─── 1. ZOD VALIDATION SCHEMA ─────────────────────────────────────────────
 const milestoneSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters"),
     amount: z.number({ invalid_type_error: "Must be a valid number" }).min(50, "Minimum amount is £50"),
@@ -31,7 +27,6 @@ const jobCreationSchema = z.object({
 
 type JobCreationFormValues = z.infer<typeof jobCreationSchema>;
 
-// ─── 2. MAIN COMPONENT ────────────────────────────────────────────────────
 export default function NewJobWizard() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,13 +82,11 @@ export default function NewJobWizard() {
 
     const estimatedPayout = totalAmount - trustBridgeFee - totalProcessingFees;
 
-    // ─── SUBMIT HANDLER ───────────────────────────────────────────────────────
     const onSubmit = async (data: JobCreationFormValues) => {
         setIsSubmitting(true);
         setSubmitError(null);
 
         try {
-            // Map frontend Zod form to backend JobCreationDto
             const dto = {
                 clientEmail: data.clientEmail.trim(),
                 clientPhoneNumber: data.clientPhoneNumber?.trim() || null,
