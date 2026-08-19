@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,19 +25,20 @@ public class MilestoneApiController {
     private final MilestoneService milestoneService;
 
     @PostMapping(value = "/request-release/freelancer", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> milestoneSubmissionFreelancer(
+    public ResponseEntity<String> milestoneSubmissionFreelancer (
         @RequestParam("milestoneId") String milestoneId,
         @RequestParam(value = "deliverableLink", required = false) String deliverableLink,
         @RequestParam(value = "notes", required = false) String notes,
-        @RequestParam(value = "scopeItems", required = false) String scopeItemsJson,
-        @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+        @RequestParam(value = "scopeItems", required = false) List<String> scopeItemsJson,
+        @RequestParam(value = "files", required = false) List<MultipartFile> files) throws IOException {
 
         Milestones milestone = milestoneRepository.findById(UUID.fromString(milestoneId))
                 .orElseThrow(() -> new RuntimeException("Milestone not found"));
 
         log.info("Milestone submission received for Milestone ID: {}", milestone.getId());
 
-        milestoneService.freelancerSubmittedMilestone(milestone.getId());
+        milestoneService.freelancerSubmittedMilestone(UUID.fromString(milestoneId), deliverableLink, notes, scopeItemsJson, files);
+
 
         // TODO: handle deliverable link, notes, scope items, and files
 

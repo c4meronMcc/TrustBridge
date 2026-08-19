@@ -46,6 +46,40 @@ CREATE TABLE milestones (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE milestone_submissions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    milestone_id uuid NOT NULL REFERENCES milestones(id),
+    deliverable_link VARCHAR(2048),
+    notes TEXT,
+    scope_items_json TEXT,
+    submitted_by_id uuid NOT NULL REFERENCES users(id),
+
+    CONSTRAINT fk_milestone_submissions_milestone
+               FOREIGN KEY (milestone_id)
+               REFERENCES milestones(id)
+               ON DELETE CASCADE
+);
+
+CREATE TABLE milestone_submission_file (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at         TIMESTAMPTZ  NOT NULL,
+    updated_at         TIMESTAMPTZ NOT NULL,
+
+    submission_id      UUID NOT NULL,
+    original_filename  VARCHAR(255),
+    stored_path        VARCHAR(1024),
+    content_type       VARCHAR(255),
+    size_bytes         BIGINT,
+    sha_256_hash       VARCHAR(64),
+
+    CONSTRAINT fk_milestone_submission_file_submission
+        FOREIGN KEY (submission_id)
+            REFERENCES milestone_submissions (id)
+            ON DELETE CASCADE
+);
+
 -- Stripe accounts table
 CREATE TABLE stripe_accounts (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -184,3 +218,5 @@ CREATE INDEX idx_stripe_customers_user ON stripe_customers(user_id);
 CREATE INDEX idx_disputes_milestone ON disputes(milestone_id);
 CREATE INDEX idx_disputes_mediator ON disputes(mediator_id);
 CREATE UNIQUE INDEX idx_stripe_event_id ON stripe_webhook_logs(stripe_event_id);
+CREATE INDEX idx_milestone_submissions_milestone_id on milestone_submissions(milestone_id);
+CREATE INDEX idx_milestone_submission_file_submission_id ON milestone_submission_file (submission_id);
