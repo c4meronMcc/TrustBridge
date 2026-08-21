@@ -60,3 +60,4 @@ logs/
 .env*
 .env
 frontend/secure-ripple-*.json
+uploads/

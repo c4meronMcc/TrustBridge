@@ -3,6 +3,7 @@ package com.trustbridge.Features.Jobs.Service;
 import com.trustbridge.Domain.Entities.*;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
+import com.trustbridge.Domain.Repositories.MilestoneSubmissionFileRepository;
 import com.trustbridge.Domain.Repositories.MilestoneSubmissionRepository;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
 import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
@@ -30,6 +31,7 @@ public class MilestoneService {
     private final MilestoneEmailListener milestoneEmailListener;
     private final FileStorageService fileStorageService;
     private final MilestoneSubmissionRepository milestoneSubmissionRepository;
+    private final MilestoneSubmissionFileRepository milestoneSubmissionFileRepository;
 
     /**
      * Creates and saves milestones for a given job based on the provided list of milestone DTOs.
@@ -79,6 +81,8 @@ public class MilestoneService {
                 .submittedBy(user)
                 .build();
 
+        milestoneSubmissionRepository.save(submission);
+
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
@@ -91,11 +95,13 @@ public class MilestoneService {
                             .contentType(file.getContentType())
                             .sizeBytes(file.getSize())
                             .build();
+
+                    milestoneSubmissionFileRepository.save(submissionFile);
                 }
             }
         }
 
-        milestoneSubmissionRepository.save(submission);
+
         milestoneStateService.moveMilestoneIntoSubmission(milestoneId);
 
     }
