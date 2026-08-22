@@ -40,11 +40,16 @@ public class MilestoneEmailListener {
         log.info("sending email to {}", clientEmail);
 
 
+        String frontendReviewUrl = "http://localhost:3000/submission/approval/"
+                + milestone.getId()
+                + "?jobId=" + milestone.getJob().getId();
+
         Map<String, Object> emailData = Map.of(
                 "freelancerName", milestone.getJob().getFreelancer().getFirstName() + " " + milestone.getJob().getFreelancer().getLastName(),
                 "clientName", milestone.getJob().getClient().getFirstName() + " " + milestone.getJob().getClient().getLastName(),
                 "amount", milestone.getAmount(),
-                "milestoneTitle", milestone.getTitle()
+                "milestoneTitle", milestone.getTitle(),
+                "reviewUrl", frontendReviewUrl
         );
 
         String htmlBody = templateEngineService.processTemplate("freelancer-submitted-milstone-email.html", emailData);
@@ -70,10 +75,13 @@ public class MilestoneEmailListener {
 
         log.info("sending email to {}", freelancerEmail);
 
+        String frontendJobUrl = "http://localhost:3000/dashboard/freelancer/jobs/" + milestone.getJob().getId();
+
         Map<String, Object> emailData = Map.of(
                 "clientName", milestone.getJob().getClient().getFirstName() + " " + milestone.getJob().getClient().getLastName(),
                 "freelancerName", milestone.getJob().getFreelancer().getFirstName() + " " + milestone.getJob().getFreelancer().getLastName(),
-                "milestoneTitle", milestone.getTitle()
+                "milestoneTitle", milestone.getTitle(),
+                "jobUrl", frontendJobUrl
         );
 
         String htmlBody = templateEngineService.processTemplate("freelancer-notification-that-client-has-received-email.html", emailData);

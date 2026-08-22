@@ -21,7 +21,7 @@
             cursor: pointer;
         }
     </style>
-    <title>Milestone Submitted</title>
+    <title>Review Milestone Deliverables</title>
 </head>
 <body>
 <div class="container">
@@ -29,19 +29,20 @@
         <h2>TrustBridge Payments</h2>
     </div>
 
-    <p>Hi <span th:text="${freelancerName}">Freelancer</span>,</p>
+    <p>Hi <span th:text="${clientName}">Client</span>,</p>
 
-    <p>Your work has been successfully submitted to <strong th:text="${clientName}">the client</strong> for review.</p>
+    <p><strong th:text="${freelancerName}">The freelancer</strong> has submitted their deliverables for your review. Please review the work to ensure it meets your agreed specifications.</p>
 
     <p><strong>Milestone:</strong> <span th:text="${milestoneTitle}">Project Setup</span></p>
 
     <div class="amount">
-        $<span th:text="${amount}">0.00</span> USD
+        £<span th:text="${amount}">0.00</span>
     </div>
 
-    <p>Once the client approves your submission, the funds will be released to your TrustBridge wallet.</p>
+    <p>Approving this submission will instantly release the escrowed funds to the freelancer via our secure pay-by-bank rail. If the work requires changes, you can request revisions directly from the review page.</p>
 
-    <a class="action-button" th:href="@{http://localhost:3000/freelancer/home}">View Project</a>
+    <!-- The backend should generate the full absolute URL and pass it as 'reviewUrl' -->
+    <a class="action-button" th:href="${reviewUrl}">Review Deliverables</a>
 
     <div class="footer">
         &copy; 2026 TrustBridge Financial. All rights reserved.

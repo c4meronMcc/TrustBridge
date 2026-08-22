@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useCallback, use } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
     ArrowLeft,
     ShieldCheck,
@@ -9,6 +9,7 @@ import {
     FileText,
     File,
     Download,
+    ExternalLink,
     AlertCircle,
     Loader2,
     CheckCircle2,
@@ -18,7 +19,8 @@ import {
     Square,
     Clock,
     XCircle,
-    Landmark, ArrowRight
+    Landmark,
+    ArrowRight
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -41,12 +43,11 @@ interface SubmissionFileDto {
 interface MilestoneSubmissionReviewDto {
     submissionId: string;
     milestoneId: string;
-    submittedAt: string; // ISO-8601 string from Instant
+    submittedAt: string;
     notes: string;
     deliverableLink: string;
     scopeItems: ScopeItemDto[];
     files: SubmissionFileDto[];
-    // Additional fields for UI display
     milestoneTitle: string;
     freelancerName: string;
     milestoneAmount: number;
@@ -59,11 +60,17 @@ interface MilestoneSubmissionReviewDto {
 export default function ClientReviewPage({
                                              params,
                                          }: {
-    params: Promise<{ jobId: string; submissionId: string }>;
+    params: Promise<{ milestoneId: string }>;
 }) {
     const router = useRouter();
-    const resolvedParams = React.use(params);
-    const { jobId, submissionId } = resolvedParams;
+    const searchParams = useSearchParams();
+
+    // Resolve the milestoneId from the folder path [milestoneId]
+    const resolvedParams = use(params);
+    const { milestoneId } = resolvedParams;
+
+    // Extract jobId from the email link query string (e.g. ?jobId=123-abc)
+    const jobId = searchParams.get("jobId");
 
     const [submissionData, setSubmissionData] = useState<MilestoneSubmissionReviewDto | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -82,7 +89,7 @@ export default function ClientReviewPage({
         try {
             setIsLoading(true);
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || ''}/api/milestone/review/${submissionId}`,
+                `http://localhost:8080/api/milestone/review/${milestoneId}`,
                 { credentials: "include" }
             );
 
@@ -95,7 +102,7 @@ export default function ClientReviewPage({
         } finally {
             setIsLoading(false);
         }
-    }, [submissionId]);
+    }, [milestoneId]);
 
     useEffect(() => {
         fetchSubmission();
@@ -109,9 +116,8 @@ export default function ClientReviewPage({
         if (isApproving || isRejecting) return;
         setIsApproving(true);
         try {
-            // Triggers State Machine -> instantly executes pay-by-bank API route
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || ''}/api/milestone/approve/${submissionId}`,
+                `http://localhost:8080/api/milestone/approve/${milestoneId}`,
                 { method: "POST", credentials: "include" }
             );
             if (!response.ok) throw new Error("Approval failed");
@@ -126,9 +132,8 @@ export default function ClientReviewPage({
         if (isApproving || isRejecting) return;
         setIsRejecting(true);
         try {
-            // Triggers State Machine -> sets status back to 'IN_PROGRESS' or 'REVISION'
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || ''}/api/milestone/request-changes/${submissionId}`,
+                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/milestone/request-changes/${milestoneId}`,
                 { method: "POST", credentials: "include" }
             );
             if (!response.ok) throw new Error("Request changes failed");
@@ -163,6 +168,51 @@ export default function ClientReviewPage({
             hour: "2-digit",
             minute: "2-digit"
         });
+    };
+
+    const handleReturnToJob = () => {
+        if (jobId) {
+            router.push(`/dashboard/client/jobs/${jobId}`);
+        } else {
+            router.push('/dashboard/client/home');
+        }
+    };
+
+    const handleFileAction = async (downloadUrl: string, fileName: string, action: "open" | "download") => {
+        try {
+            // 1. Fetch the file securely, explicitly including your session cookies
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${downloadUrl}?download=${action === 'download'}`,
+                { method: "GET", credentials: "include" }
+            );
+
+            if (!response.ok) {
+                throw new Error("You do not have permission to access this file, or it is missing.");
+            }
+
+            // 2. Convert the secure response into a local browser Blob
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            // 3. Execute the user's action
+            if (action === "open") {
+                window.open(blobUrl, "_blank");
+            } else {
+                const link = document.createElement("a");
+                link.href = blobUrl;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            // 4. Clean up the memory after 1 second
+            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+
+        } catch (err: any) {
+            console.error("File access error:", err);
+            alert(err.message);
+        }
     };
 
     // ---------------------------------------------------------------------------
@@ -214,7 +264,7 @@ export default function ClientReviewPage({
                             : "The freelancer has been notified to revise their submission based on your feedback."}
                     </p>
                     <button
-                        onClick={() => router.push(`/dashboard/client/jobs/${jobId}`)}
+                        onClick={handleReturnToJob}
                         className="bg-[#3FCD6B] hover:bg-[#34b35c] text-[#0A3D1A] px-8 py-3.5 rounded-xl font-bold transition-transform active:scale-[0.98] inline-flex items-center gap-2 shadow-lg shadow-[#3FCD6B]/20"
                     >
                         Return to Job <ArrowRight size={16} />
@@ -232,26 +282,22 @@ export default function ClientReviewPage({
 
     return (
         <div className="min-h-screen bg-[#f4f6f1] dark:bg-neutral-950 font-sans text-slate-900 dark:text-neutral-100 selection:bg-[#3FCD6B]/30 pb-24">
-
-            {/* TOP NAVIGATION */}
             <div className="sticky top-0 z-40 bg-[#f4f6f1]/80 dark:bg-neutral-950/80 backdrop-blur-md border-b border-slate-200 dark:border-neutral-800">
                 <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
                     <button
-                        onClick={() => router.back()}
+                        onClick={handleReturnToJob}
                         className="group flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
                     >
                         <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
                         Back to Workspace
                     </button>
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 dark:text-neutral-500 bg-white dark:bg-neutral-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-neutral-800">
-                        <Briefcase size={14} /> {data.milestoneId.split('-')[0]}
+                        <Briefcase size={14} /> {milestoneId.split('-')[0]}
                     </div>
                 </div>
             </div>
 
             <div className="max-w-6xl mx-auto px-6 pt-10 w-full">
-
-                {/* HERO */}
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-16">
                     <div className="max-w-2xl">
                         <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#0F6E56] bg-[#E1F5EE] dark:bg-[#3FCD6B]/10 dark:text-[#3FCD6B] px-3 py-1.5 rounded-full uppercase tracking-wider mb-4">
@@ -269,11 +315,7 @@ export default function ClientReviewPage({
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12">
-
-                    {/* LEFT COLUMN: SUBMISSION DETAILS */}
                     <div className="space-y-6">
-
-                        {/* SCOPE ITEMS */}
                         {data.scopeItems && data.scopeItems.length > 0 && (
                             <div className="bg-white dark:bg-neutral-900/50 rounded-3xl p-6 border border-slate-100 dark:border-neutral-800">
                                 <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
@@ -300,7 +342,6 @@ export default function ClientReviewPage({
                             </div>
                         )}
 
-                        {/* DELIVERABLE LINK */}
                         {data.deliverableLink && (
                             <div className="bg-white dark:bg-neutral-900/50 rounded-3xl p-6 border border-slate-100 dark:border-neutral-800">
                                 <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
@@ -308,7 +349,7 @@ export default function ClientReviewPage({
                                     Deliverable Link
                                 </h2>
                                 <a
-                                    href={data.deliverableLink}
+                                    href={data.deliverableLink.match(/^https?:\/\//) ? data.deliverableLink : `https://${data.deliverableLink}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="mt-4 flex items-center justify-between bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl p-4 hover:border-[#3FCD6B] hover:bg-[#3FCD6B]/5 transition-colors group"
@@ -324,7 +365,6 @@ export default function ClientReviewPage({
                             </div>
                         )}
 
-                        {/* SUBMISSION NOTES */}
                         {data.notes && (
                             <div className="bg-white dark:bg-neutral-900/50 rounded-3xl p-6 border border-slate-100 dark:border-neutral-800">
                                 <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
@@ -339,7 +379,6 @@ export default function ClientReviewPage({
                             </div>
                         )}
 
-                        {/* FILES */}
                         {data.files && data.files.length > 0 && (
                             <div className="bg-white dark:bg-neutral-900/50 rounded-3xl p-6 border border-slate-100 dark:border-neutral-800">
                                 <h2 className="text-base font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
@@ -362,13 +401,24 @@ export default function ClientReviewPage({
                                                     </p>
                                                 </div>
                                             </div>
-                                            <a
-                                                href={`${process.env.NEXT_PUBLIC_API_URL || ''}${file.downloadUrl}`}
-                                                download
-                                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-neutral-300 hover:text-[#3FCD6B] hover:border-[#3FCD6B] transition-colors shrink-0"
-                                            >
-                                                <Download size={14} />
-                                            </a>
+
+                                            {/* DUAL ACTION BUTTONS */}
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <button
+                                                    onClick={() => handleFileAction(file.downloadUrl, file.fileName, "open")}
+                                                    title="Open in new tab"
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-neutral-300 hover:text-[#3FCD6B] hover:border-[#3FCD6B] transition-colors"
+                                                >
+                                                    <ExternalLink size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleFileAction(file.downloadUrl, file.fileName, "download")}
+                                                    title="Download file"
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-neutral-300 hover:text-[#3FCD6B] hover:border-[#3FCD6B] transition-colors"
+                                                >
+                                                    <Download size={14} />
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -376,10 +426,7 @@ export default function ClientReviewPage({
                         )}
                     </div>
 
-                    {/* RIGHT COLUMN: DECISION VAULT */}
                     <div className="space-y-6 lg:sticky lg:top-24 h-fit">
-
-                        {/* Action Card */}
                         <div className="bg-[#0A3D1A] dark:bg-neutral-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden border border-[#0A3D1A] dark:border-neutral-800">
                             <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#3FCD6B]/15 blur-3xl rounded-full pointer-events-none" />
                             <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-[#3FCD6B]/10 blur-2xl rounded-full pointer-events-none" />

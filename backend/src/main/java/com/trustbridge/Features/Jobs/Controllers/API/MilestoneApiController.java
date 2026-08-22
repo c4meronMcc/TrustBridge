@@ -2,6 +2,7 @@ package com.trustbridge.Features.Jobs.Controllers.API;
 
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
+import com.trustbridge.Features.Jobs.Dto.MilestoneSubmission.MilestoneSubmissionReviewDto;
 import com.trustbridge.Features.Jobs.Service.MilestoneService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Slf4j
-@Controller
+@RestController
 @RequestMapping("/api/milestone")
 @RequiredArgsConstructor
 public class MilestoneApiController {
@@ -29,7 +30,7 @@ public class MilestoneApiController {
         @RequestParam("milestoneId") String milestoneId,
         @RequestParam(value = "deliverableLink", required = false) String deliverableLink,
         @RequestParam(value = "notes", required = false) String notes,
-        @RequestParam(value = "scopeItems", required = false) List<String> scopeItemsJson,
+        @RequestParam(value = "scopeItems", required = false) String scopeItemsJson,
         @RequestParam(value = "files", required = false) List<MultipartFile> files) throws IOException {
 
         Milestones milestone = milestoneRepository.findById(UUID.fromString(milestoneId))
@@ -39,11 +40,13 @@ public class MilestoneApiController {
 
         milestoneService.freelancerSubmittedMilestone(UUID.fromString(milestoneId), deliverableLink, notes, scopeItemsJson, files);
 
-
-        // TODO: handle deliverable link, notes, scope items, and files
-
         return ResponseEntity.ok("Submission received successfully.");
     }
 
+    @GetMapping("/review/{milestoneId}")
+    public ResponseEntity<MilestoneSubmissionReviewDto> getMilestoneSubmission(
+            @PathVariable("milestoneId") UUID milestoneId) { // <-- Explicitly mapped
+        return ResponseEntity.ok(milestoneService.getSubmissionForReview(milestoneId));
+    }
 
 }

@@ -1,22 +1,25 @@
 package com.trustbridge.Features.Jobs.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.trustbridge.Domain.Entities.*;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.MilestoneSubmissionFileRepository;
 import com.trustbridge.Domain.Repositories.MilestoneSubmissionRepository;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
+import com.trustbridge.Features.Jobs.Dto.MilestoneSubmission.MilestoneSubmissionReviewDto;
+import com.trustbridge.Features.Jobs.Dto.MilestoneSubmission.ScopeItemDto;
+import com.trustbridge.Features.Jobs.Dto.MilestoneSubmission.SubmissionFileDto;
 import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
-import com.trustbridge.Features.Payments.Events.MilestoneFundedEvent;
-import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -32,6 +35,7 @@ public class MilestoneService {
     private final FileStorageService fileStorageService;
     private final MilestoneSubmissionRepository milestoneSubmissionRepository;
     private final MilestoneSubmissionFileRepository milestoneSubmissionFileRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * Creates and saves milestones for a given job based on the provided list of milestone DTOs.
@@ -63,7 +67,7 @@ public class MilestoneService {
         log.info("Saved {} milestones for jobId: {}", milestones.size(), jobs.getId());
     }
 
-    public void freelancerSubmittedMilestone(UUID milestoneId, String deliverableLink, String notes, List<String> scopeItems, List<MultipartFile> files) throws IOException {
+    public void freelancerSubmittedMilestone(UUID milestoneId, String deliverableLink, String notes, String scopeItems, List<MultipartFile> files) throws IOException {
 
         Milestones milestone = milestoneRepository.findById(milestoneId).orElseThrow();
 
@@ -105,4 +109,45 @@ public class MilestoneService {
         milestoneStateService.moveMilestoneIntoSubmission(milestoneId);
 
     }
+
+    public MilestoneSubmissionReviewDto getSubmissionForReview(UUID milestoneId) {
+        MilestoneSubmissions submission = milestoneSubmissionRepository.findTopByMilestoneIdOrderByCreatedAtDesc(milestoneId)
+                .orElseThrow(() -> new RuntimeException("Submission not found for this milestone"));
+
+        List<ScopeItemDto> scopeItems = new ArrayList<>();
+        try {
+            String scopeJson = submission.getScopeItemsJson();
+            if (scopeJson != null && !scopeJson.isBlank()) {
+                scopeItems = objectMapper.readValue(scopeJson, new TypeReference<List<ScopeItemDto>>() {});
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse scope items JSON", e);
+        }
+
+        List<SubmissionFileDto> files = milestoneSubmissionFileRepository.findAllBySubmissionId(submission.getId())
+                .stream()
+                .map(file -> new SubmissionFileDto(
+                        file.getId(),
+                        file.getOriginalFilename(),
+                        file.getSizeBytes(),
+                        "/api/files/download/" + file.getId()
+                ))
+                .toList();
+
+
+        return new MilestoneSubmissionReviewDto(
+                submission.getId(),
+                milestoneId,
+                submission.getSubmittedBy().getId().toString(),
+                submission.getNotes(),
+                submission.getDeliverableLink(),
+                scopeItems,
+                files,
+                submission.getMilestone().getTitle(), // Assuming title exists on Milestones
+                submission.getSubmittedBy().getFirstName() + " " + submission.getSubmittedBy().getLastName(), // Map this from your job/user entity relation
+                submission.getMilestone().getAmount() // Assuming amount exists on Milestones
+        );
+    }
+
+
 }

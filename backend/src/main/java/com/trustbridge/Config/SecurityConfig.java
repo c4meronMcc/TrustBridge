@@ -66,6 +66,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/webhooks/Stripe").permitAll()
                         .requestMatchers("/api/v1/webhooks/**").permitAll()
                         .requestMatchers("/api/auth/**", "/api/invite/**").permitAll()
+                        .requestMatchers("/api/files/**").authenticated()
                         .anyRequest().authenticated()
                 ).addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

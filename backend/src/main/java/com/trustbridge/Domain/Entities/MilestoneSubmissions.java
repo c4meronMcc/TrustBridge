@@ -28,7 +28,7 @@ public class MilestoneSubmissions extends BaseEntity {
     private String notes;
 
     @Column(name = "scope_items_json", columnDefinition = "TEXT")
-    private List<String> scopeItemsJson; // stored as raw JSON string
+    private String scopeItemsJson; // stored as raw JSON string
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "submitted_by_id", nullable = false)
