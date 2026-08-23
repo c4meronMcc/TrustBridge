@@ -128,6 +128,12 @@ export default function ClientReviewPage({
         }
     };
 
+    const isBrowserViewable = (fileName: string) => {
+        const viewableExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.txt'];
+        const lowerName = fileName.toLowerCase();
+        return viewableExtensions.some(ext => lowerName.endsWith(ext));
+    };
+
     const handleRequestChanges = async () => {
         if (isApproving || isRejecting) return;
         setIsRejecting(true);
@@ -404,13 +410,19 @@ export default function ClientReviewPage({
 
                                             {/* DUAL ACTION BUTTONS */}
                                             <div className="flex items-center gap-2 shrink-0">
-                                                <button
-                                                    onClick={() => handleFileAction(file.downloadUrl, file.fileName, "open")}
-                                                    title="Open in new tab"
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-neutral-300 hover:text-[#3FCD6B] hover:border-[#3FCD6B] transition-colors"
-                                                >
-                                                    <ExternalLink size={14} />
-                                                </button>
+
+                                                {/* 1. Only show Open in New Tab if the browser can actually read it */}
+                                                {isBrowserViewable(file.fileName) && (
+                                                    <button
+                                                        onClick={() => handleFileAction(file.downloadUrl, file.fileName, "open")}
+                                                        title="Open in new tab"
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-600 dark:text-neutral-300 hover:text-[#3FCD6B] hover:border-[#3FCD6B] transition-colors"
+                                                    >
+                                                        <ExternalLink size={14} />
+                                                    </button>
+                                                )}
+
+                                                {/* 2. ALWAYS show the Download Button */}
                                                 <button
                                                     onClick={() => handleFileAction(file.downloadUrl, file.fileName, "download")}
                                                     title="Download file"
