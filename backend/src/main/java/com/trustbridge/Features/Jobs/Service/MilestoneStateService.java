@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
@@ -18,6 +19,7 @@ import com.trustbridge.Domain.Enums.MilestoneStatus.*;
 import com.trustbridge.Domain.Enums.MilestoneEvent.*;
 import reactor.core.publisher.Mono;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,6 +32,7 @@ public class MilestoneStateService {
     private final StateMachineFactory<milestoneStatus, milestoneEvent> stateMachineFactory;
     private final MilestoneStateChangeInterceptor milestoneInterceptor;
     private final JobRepository jobRepository;
+    private final PathPatternRequestMatcher.Builder builder;
 
     /**
      * Builds and initializes a state machine for a specific milestone, configured with
@@ -104,15 +107,16 @@ public class MilestoneStateService {
      * @param milestoneId The unique identifier of the milestone for which the event should be fired.
      * @param event       The specific event to be fired, which may trigger a state transition in the state machine.
      */
-    public void fireEvent(UUID milestoneId, milestoneEvent event) {
+    public void fireEvent(UUID milestoneId, milestoneEvent event, Map<String, Object> extraHeaders) {
         StateMachine<milestoneStatus, milestoneEvent> sm = buildStateMachine(milestoneId);
 
-        Message<milestoneEvent> message = MessageBuilder
+        MessageBuilder<milestoneEvent> builder = MessageBuilder
                 .withPayload(event)
-                .setHeader("milestoneId", milestoneId)
-                .build();
+                .setHeader("milestoneId", milestoneId);
 
-        sm.sendEvent(Mono.just(message)).blockLast();
+        extraHeaders.forEach(builder::setHeader);
+
+        sm.sendEvent(Mono.just(builder.build())).blockLast();
     }
 
     /**
@@ -122,7 +126,7 @@ public class MilestoneStateService {
      * @param milestoneId The unique identifier of the milestone to activate.
      */
     public void milestoneActivated(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.UNLOCK);
+        fireEvent(milestoneId, milestoneEvent.UNLOCK, Map.of());
     }
 
     /**
@@ -133,7 +137,7 @@ public class MilestoneStateService {
      * @param milestoneId The unique identifier of the milestone for which the "Submitted Work" event is triggered.
      */
     public void workedSubmitted(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.SUBMITTED_WORK);
+        fireEvent(milestoneId, milestoneEvent.SUBMITTED_WORK, Map.of());
     }
 
     /**
@@ -141,7 +145,7 @@ public class MilestoneStateService {
      * event. This action is processed by the associated state machine, which handles the
      * state transition for the milestone*/
     public void revokeSubmission(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.REVOKE_SUBMISSION);
+        fireEvent(milestoneId, milestoneEvent.REVOKE_SUBMISSION, Map.of());
     }
 
     /**
@@ -152,7 +156,7 @@ public class MilestoneStateService {
      * @param milestoneId The unique identifier of the milestone for which the "Work Approved" event is triggered.
      */
     public void workApproved(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.WORK_APPROVED);
+        fireEvent(milestoneId, milestoneEvent.WORK_APPROVED, Map.of());
     }
 
     /**
@@ -163,7 +167,7 @@ public class MilestoneStateService {
      * @param milestoneId The unique identifier of the milestone to be canceled.
      */
     public void cancelMilestone(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.CANCEL_MILESTONE);
+        fireEvent(milestoneId, milestoneEvent.CANCEL_MILESTONE, Map.of());
     }
 
     /**
@@ -174,7 +178,7 @@ public class MilestoneStateService {
      * @param milestoneId The unique identifier of the milestone for which the "Funds Deposited" event is triggered.
      */
     public void fundsDeposited(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.FUNDS_DEPOSITED);
+        fireEvent(milestoneId, milestoneEvent.FUNDS_DEPOSITED, Map.of());
     }
 
     /**
@@ -184,7 +188,7 @@ public class MilestoneStateService {
      *                    should be released
      */
     public void releaseFunds(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.RELEASE_FUNDS);
+        fireEvent(milestoneId, milestoneEvent.RELEASE_FUNDS, Map.of("isClientApproving", true));
     }
 
     /**
@@ -193,7 +197,7 @@ public class MilestoneStateService {
      * @param milestoneId the unique identifier of the milestone for which the dispute is raised
      */
     public void disputeRaised(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.RAISE_DISPUTE);
+        fireEvent(milestoneId, milestoneEvent.RAISE_DISPUTE, Map.of());
     }
 
     /**
@@ -202,7 +206,7 @@ public class MilestoneStateService {
      * @param milestoneId the unique identifier of the milestone for which the dispute is resolved
      */
     public void disputeResolved(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.RESOLVE_DISPUTE);
+        fireEvent(milestoneId, milestoneEvent.RESOLVE_DISPUTE, Map.of());
     }
 
     /**
@@ -211,6 +215,6 @@ public class MilestoneStateService {
      * @param milestoneId the unique identifier of the milestone being disputed
      */
     public void disputeToArbitration(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.DISPUTE_TO_ARBITRATION);
+        fireEvent(milestoneId, milestoneEvent.DISPUTE_TO_ARBITRATION, Map.of());
     }
 }
