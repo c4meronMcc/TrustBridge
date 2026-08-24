@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,6 +48,25 @@ public class MilestoneApiController {
     public ResponseEntity<MilestoneSubmissionReviewDto> getMilestoneSubmission(
             @PathVariable("milestoneId") UUID milestoneId) { // <-- Explicitly mapped
         return ResponseEntity.ok(milestoneService.getSubmissionForReview(milestoneId));
+    }
+
+    @PostMapping("/approve/{milestoneId}")
+    public ResponseEntity<String> approveMilestone(
+            @PathVariable UUID milestoneId,
+            Authentication authentication) {
+
+        milestoneService.approveMilestone(milestoneId, authentication.getName());
+        return ResponseEntity.ok("Milestone approved, funds released.");
+    }
+
+    @PostMapping("/request-changes/{milestoneId}")
+    public ResponseEntity<String> requestChanges(
+            @PathVariable UUID milestoneId,
+            @RequestBody(required = false) String feedback,
+            Authentication authentication) {
+
+        milestoneService.requestChanges(milestoneId, authentication.getName(), feedback);
+        return ResponseEntity.ok("Changes requested.");
     }
 
 }
