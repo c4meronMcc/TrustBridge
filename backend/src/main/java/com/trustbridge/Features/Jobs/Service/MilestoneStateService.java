@@ -178,7 +178,7 @@ public class MilestoneStateService {
      * @param milestoneId The unique identifier of the milestone for which the "Funds Deposited" event is triggered.
      */
     public void fundsDeposited(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.FUNDS_DEPOSITED, Map.of());
+        fireEvent(milestoneId, milestoneEvent.FUNDS_DEPOSITED, Map.of("isClientApproving", true));
     }
 
     /**

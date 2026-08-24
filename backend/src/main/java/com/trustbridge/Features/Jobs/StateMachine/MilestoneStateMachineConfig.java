@@ -9,8 +9,10 @@ import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
+import com.trustbridge.Features.Payments.Config.StripeConfig;
 import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
+import com.trustbridge.Features.Payments.Service.StripeConnectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +38,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     private final EmailServiceImpl emailService;
     private final UserRepository userRepository;
     private final MilestoneEmailListener milestoneEmailListener;
+    private final StripeConnectService stripeConnectService;
 
     /**
      * Configures the state machine states for the MilestoneStateMachineConfig.
@@ -127,6 +130,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                 .source(milestoneStatus.APPROVED).target(milestoneStatus.PAID_OUT)
                 .event(milestoneEvent.RELEASE_FUNDS)
                 .guard(isClientApprovingMilestoneGuard())
+                .action(releaseEscrowFundsAction())
                 //Submitted -> Dispute (Work Disputed)
                 .and()
                 .withExternal()
@@ -236,6 +240,24 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
 
             milestoneEmailListener.handleClientReceivesWaitingForApprovalEmail(event);
             Logger.getLogger("ACTION FIRED: Sending email to Freelancer for Milestone " + milestoneId + " - Client approval email sent!");
+        };
+    }
+
+    @Bean
+    public Action<milestoneStatus, milestoneEvent> releaseEscrowFundsAction() {
+        return context -> {
+            UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
+            Milestones milestone = milestoneRepository.findById(milestoneId)
+                    .orElseThrow(() -> new RuntimeException("Milestone not found!"));
+
+            Users freelancer = milestone.getJob().getFreelancer();
+
+            try {
+                stripeConnectService.releaseEscrowFunds(milestone, freelancer);
+                Logger.getLogger("ACTION FIRED: Escrow funds released for Milestone " + milestoneId);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         };
     }
 

@@ -14,6 +14,7 @@ import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -150,4 +151,40 @@ public class MilestoneService {
     }
 
 
+    @Transactional
+    public void approveMilestone(UUID milestoneId, String authenticatedEmail) {
+        Milestones milestones = milestoneRepository.findById(milestoneId)
+                .orElseThrow();
+
+        Users client = milestones.getJob().getClient();
+
+        if (!client.getEmail().equals(authenticatedEmail)) {
+            throw new AccessDeniedException("You are not authorized to approve this milestone.");
+        }
+
+        if (milestones.getStatus() != MilestoneStatus.milestoneStatus.SUBMITTED) {
+            throw new IllegalStateException("Milestone is not in SUBMITTED state");
+        }
+
+        milestoneStateService.workApproved(milestoneId);
+        milestoneStateService.releaseFunds(milestoneId);
+    }
+
+    @Transactional
+    public void requestChanges(UUID milestoneId, String authenticatedEmail, String feedback) {
+        Milestones milestone = milestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new RuntimeException("Milestone not found"));
+
+        Users client = milestone.getJob().getClient();
+        if (!client.getEmail().equals(authenticatedEmail)) {
+            throw new AccessDeniedException("Only the client on this job can request changes");
+        }
+
+        if (milestone.getStatus() != MilestoneStatus.milestoneStatus.SUBMITTED) {
+            throw new IllegalStateException("Milestone is not awaiting approval");
+        }
+
+        milestoneStateService.revokeSubmission(milestoneId);
+        milestoneEmailListener.handleClientRequestedChangesToMilestone(milestoneId, feedback); // new method, Phase 5
+    }
 }

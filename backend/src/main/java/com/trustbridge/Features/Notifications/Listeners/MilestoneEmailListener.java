@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -95,5 +96,9 @@ public class MilestoneEmailListener {
         );
 
         log.info("Email successfully sent to Freelancer!");
+    }
+
+    public void handleClientRequestedChangesToMilestone(UUID milestoneId, String feedback) {
+        log.info("received alert for Milestone Submission {}. Preparing email...", milestoneId);
     }
 }
