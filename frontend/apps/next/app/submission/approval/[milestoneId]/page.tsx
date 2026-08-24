@@ -89,7 +89,7 @@ export default function ClientReviewPage({
         try {
             setIsLoading(true);
             const response = await fetch(
-                `http://localhost:8080/api/milestone/review/${milestoneId}`,
+                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/milestone/review/${milestoneId}`,
                 { credentials: "include" }
             );
 
@@ -117,7 +117,7 @@ export default function ClientReviewPage({
         setIsApproving(true);
         try {
             const response = await fetch(
-                `http://localhost:8080/api/milestone/approve/${milestoneId}`,
+                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/milestone/approve/${milestoneId}`,
                 { method: "POST", credentials: "include" }
             );
             if (!response.ok) throw new Error("Approval failed");
@@ -134,13 +134,20 @@ export default function ClientReviewPage({
         return viewableExtensions.some(ext => lowerName.endsWith(ext));
     };
 
+    const [changesFeedback, setChangesFeedback] = useState("");
+
     const handleRequestChanges = async () => {
         if (isApproving || isRejecting) return;
         setIsRejecting(true);
         try {
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/milestone/request-changes/${milestoneId}`,
-                { method: "POST", credentials: "include" }
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ feedback: changesFeedback }),
+                }
             );
             if (!response.ok) throw new Error("Request changes failed");
             setActionSuccess("rejected");
