@@ -33,4 +33,7 @@ public class MilestoneSubmissions extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "submitted_by_id", nullable = false)
     private Users submittedBy;
+
+    @Column(name = "review_token", unique = true, length = 64)
+    private String reviewToken;
 }

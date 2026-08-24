@@ -55,6 +55,7 @@ CREATE TABLE milestone_submissions (
     notes TEXT,
     scope_items_json TEXT,
     submitted_by_id uuid NOT NULL REFERENCES users(id),
+    review_token varchar(64) UNIQUE,
 
     CONSTRAINT fk_milestone_submissions_milestone
                FOREIGN KEY (milestone_id)
