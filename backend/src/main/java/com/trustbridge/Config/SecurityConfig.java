@@ -67,6 +67,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/webhooks/**").permitAll()
                         .requestMatchers("/api/auth/**", "/api/invite/**").permitAll()
                         .requestMatchers("/api/files/**").authenticated()
+                        .requestMatchers("/api/milestone/review/**", "/api/milestone/approve/**", "/api/milestone/request-changes/**").permitAll()
                         .anyRequest().authenticated()
                 ).addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
