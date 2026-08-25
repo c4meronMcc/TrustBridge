@@ -1,8 +1,10 @@
 package com.trustbridge.Features.Notifications.Listeners;
 
+import com.trustbridge.Domain.Entities.MilestoneSubmissions;
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
+import com.trustbridge.Domain.Repositories.MilestoneSubmissionRepository;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Notifications.Services.TemplateEngineService;
 import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
@@ -21,6 +23,7 @@ import java.util.UUID;
 public class MilestoneEmailListener {
 
     private final MilestoneRepository milestoneRepository;
+    private final MilestoneSubmissionRepository milestoneSubmissionRepository;
     private final EmailServiceImpl emailServiceImpl;
     private final TemplateEngineService templateEngineService;
 
@@ -35,7 +38,11 @@ public class MilestoneEmailListener {
     public void handleFreelancerSubmitsMilestone(MilestoneSubmittedForApprovalEvent event) {
         log.info("received alert for Milestone Submission {}. Preparing email...", event.getMilestoneId());
 
-        Milestones milestone = milestoneRepository.findById(event.getMilestoneId()).orElseThrow();
+        Milestones milestone = milestoneRepository.findById(event.getMilestoneId())
+                .orElseThrow( () -> new RuntimeException("Milestone not found for submission event!"));
+
+        MilestoneSubmissions submissions = milestoneSubmissionRepository.findTopByMilestoneIdOrderByCreatedAtDesc(event.getMilestoneId())
+                .orElseThrow( () -> new RuntimeException("Submission not found for this milestone"));
 
         String clientEmail = milestone.getJob().getClient().getEmail();
         log.info("sending email to {}", clientEmail);
@@ -43,7 +50,8 @@ public class MilestoneEmailListener {
 
         String frontendReviewUrl = "http://localhost:3000/submission/approval/"
                 + milestone.getId()
-                + "?jobId=" + milestone.getJob().getId();
+                + "?jobId=" + milestone.getJob().getId()
+                + "&token=" + submissions.getReviewToken();
 
         Map<String, Object> emailData = Map.of(
                 "freelancerName", milestone.getJob().getFreelancer().getFirstName() + " " + milestone.getJob().getFreelancer().getLastName(),

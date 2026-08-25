@@ -69,8 +69,8 @@ export default function ClientReviewPage({
     const resolvedParams = use(params);
     const { milestoneId } = resolvedParams;
 
-    // Extract jobId from the email link query string (e.g. ?jobId=123-abc)
     const jobId = searchParams.get("jobId");
+    const reviewToken = searchParams.get("token");
 
     const [submissionData, setSubmissionData] = useState<MilestoneSubmissionReviewDto | null>(null);
     const [isLoading, setIsLoading] = useState(true);
