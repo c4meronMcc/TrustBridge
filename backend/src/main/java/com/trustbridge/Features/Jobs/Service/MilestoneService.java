@@ -152,14 +152,17 @@ public class MilestoneService {
 
 
     @Transactional
-    public void approveMilestone(UUID milestoneId, String authenticatedEmail) {
+    public void approveMilestone(UUID milestoneId, String providedToken) {
         Milestones milestones = milestoneRepository.findById(milestoneId)
                 .orElseThrow();
 
+        MilestoneSubmissions milestoneSubmissions = milestoneSubmissionRepository.findTopByMilestoneIdOrderByCreatedAtDesc(milestoneId)
+                .orElseThrow(() -> new RuntimeException("Submission not found for this milestone"));
+
         Users client = milestones.getJob().getClient();
 
-        if (!client.getEmail().equals(authenticatedEmail)) {
-            throw new AccessDeniedException("You are not authorized to approve this milestone.");
+        if (!milestoneSubmissions.getReviewToken().equals(providedToken)) {
+           throw new IllegalStateException("Milestone is not in SUBMITTED_FOR_APPROVAL state");
         }
 
         if (milestones.getStatus() != MilestoneStatus.milestoneStatus.SUBMITTED) {
