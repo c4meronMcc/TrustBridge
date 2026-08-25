@@ -53,9 +53,9 @@ public class MilestoneApiController {
     @PostMapping("/approve/{milestoneId}")
     public ResponseEntity<String> approveMilestone(
             @PathVariable UUID milestoneId,
-            Authentication authentication) {
+            @RequestHeader("X-Review-Token") String reviewToken) {
 
-        milestoneService.approveMilestone(milestoneId, authentication.getName());
+        milestoneService.approveMilestone(milestoneId, reviewToken);
         return ResponseEntity.ok("Milestone approved, funds released.");
     }
 
