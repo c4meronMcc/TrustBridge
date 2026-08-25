@@ -118,7 +118,13 @@ export default function ClientReviewPage({
         try {
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/milestone/approve/${milestoneId}`,
-                { method: "POST", credentials: "include" }
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "X-Review-Token": reviewToken ?? "",
+                    },
+                }
             );
             if (!response.ok) throw new Error("Approval failed");
             setActionSuccess("approved");
