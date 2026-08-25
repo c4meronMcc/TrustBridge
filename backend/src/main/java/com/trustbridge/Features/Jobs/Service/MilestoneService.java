@@ -84,6 +84,7 @@ public class MilestoneService {
                 .notes(notes)
                 .scopeItemsJson(scopeItems)
                 .submittedBy(user)
+                .reviewToken(UUID.randomUUID().toString())
                 .build();
 
         milestoneSubmissionRepository.save(submission);
