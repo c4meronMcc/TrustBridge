@@ -145,8 +145,9 @@ export default function ClientReviewPage({
                 {
                     method: "POST",
                     credentials: "include",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ feedback: changesFeedback }),
+                    headers: { "Content-Type": "application/json",
+                    "X-Review-Token": reviewToken ?? ""},
+                    body: JSON.stringify({ feedback: changesFeedback}),
                 }
             );
             if (!response.ok) throw new Error("Request changes failed");

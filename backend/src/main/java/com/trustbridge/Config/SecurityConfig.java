@@ -95,7 +95,7 @@ public class SecurityConfig {
 
         // Note: Browsers reject allowedHeaders("*") when allowCredentials is true,
         // so we explicitly list them to be safe.
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Cookie"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Cookie", "X-Review-Token"));
 
         // This allows your Next.js secure cookies to pass through
         configuration.setAllowCredentials(true);
