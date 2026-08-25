@@ -161,7 +161,7 @@ public class MilestoneService {
 
         Users client = milestones.getJob().getClient();
 
-        if (!milestoneSubmissions.getReviewToken().equals(providedToken)) {
+        if (milestoneSubmissions.getReviewToken() == null || !milestoneSubmissions.getReviewToken().equals(providedToken)) {
            throw new IllegalStateException("Milestone is not in SUBMITTED_FOR_APPROVAL state");
         }
 
