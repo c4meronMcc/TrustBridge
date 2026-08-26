@@ -14,6 +14,7 @@ import com.trustbridge.Domain.Repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.logging.Logger;
 
 @Service
 public class StripeConnectService {
@@ -72,19 +73,19 @@ public class StripeConnectService {
         String freelancerAccountId = freelancerAccount.getStripeAccountId();
 
         long amountInPence = milestone.getAmount().multiply(new BigDecimal(100)).longValue();
-        long platformFeeInPence = milestone.getAmount().multiply(new BigDecimal(0.02)).longValue();
+        long platformFeeInPence = amountInPence * 2 / 100;
         long amountToFreelancer = amountInPence - platformFeeInPence;
 
         TransferCreateParams params = TransferCreateParams.builder()
                 .setAmount(amountToFreelancer)
-                .setCurrency(milestone.getJob().getCurrency())
+                .setCurrency(milestone.getJob().getCurrency().toLowerCase())
                 .setDestination(freelancerAccountId)
                 .setTransferGroup(milestone.getId().toString())
                 .build();
 
         try {
             Transfer transfer = Transfer.create(params);
-            System.out.println("Successfully released funds to freelancer: " + freelancer.getEmail());
+            Logger.getLogger(getClass().getName()).info("ACTION FIRED: Escrow funds released for Milestone " + milestone.getId());
             return transfer;
         } catch (StripeException e) {
             throw new RuntimeException("Failed to release funds: " + e.getMessage());
