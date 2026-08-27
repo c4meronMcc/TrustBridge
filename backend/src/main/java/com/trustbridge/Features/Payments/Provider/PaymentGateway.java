@@ -12,4 +12,5 @@ public interface PaymentGateway {
     OnboardingResult createProviderAccount(Users freelancer);
     PayoutResult releaseFunds(Milestones milestone, Users freelancer, PaymentRequest paymentRequest);
     String getOrCreateCustomerId(Users client);
+    String getProviderName();
 }

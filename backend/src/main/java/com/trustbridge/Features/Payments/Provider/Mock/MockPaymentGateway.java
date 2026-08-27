@@ -34,4 +34,8 @@ public class MockPaymentGateway implements PaymentGateway {
     public String getOrCreateCustomerId(Users client) {
         return "mock_cus_" + client.getId();
     }
+
+    public String getProviderName() {
+        return "Mock";
+    }
 }
