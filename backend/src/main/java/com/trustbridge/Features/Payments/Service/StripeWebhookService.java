@@ -71,10 +71,7 @@ public class StripeWebhookService {
             UUID paymentRequestId = UUID.fromString(paymentRequestIdStr);
             UUID milestoneId = UUID.fromString(milestoneIdStr);
 
-            paymentStateService.paymentSuccessful(paymentRequestId);
-
-            MilestoneFundedEvent milestoneFundedEvent = new MilestoneFundedEvent(this, milestoneId);
-            eventPublisher.publishEvent(milestoneFundedEvent);
+            paymentStateService.confirmFunded(paymentRequestId, milestoneId);
 
             saveAuditLog(eventId, event.getType(), "PROCESSED", null); // Ensure "SUCCESS" matches your Enum!
             log.info("Webhook event {} processed successfully.", eventId);
