@@ -8,6 +8,7 @@ import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.StripeAccountRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Dashboard.Freelancer.Dto.*;
+import com.trustbridge.Features.Payments.Provider.PaymentGateway;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ public class DashboardService {
     private final MilestoneRepository milestoneRepository;
     private final UserRepository userRepository;
     private final StripeAccountRepository stripeAccountRepository;
+    private final PaymentGateway paymentGateway;
 
     /**
      * Retrieves and assembles dashboard data for a freelancer based on their email.
@@ -46,7 +48,8 @@ public class DashboardService {
         // financial metrics
         FinancialMetricsDto metrics = milestoneRepository.getFreelancerFinancialMetrics(user.getId());
 
-        boolean isPayoutsEnabled = stripeAccountRepository.findByUserId(user.getId())
+        boolean isPayoutsEnabled = paymentGateway.getProviderName().equals("mock") ||
+                stripeAccountRepository.findByUserId(user.getId())
                 .map(StripeAccount::getPayoutsEnabled)
                 .orElse(false);
 

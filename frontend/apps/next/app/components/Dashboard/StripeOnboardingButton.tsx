@@ -4,6 +4,7 @@ import { useState } from "react";
 
 export default function StripeOnboardingButton() {
     const [loading, setLoading] = useState(false);
+    const [verified, setVerified] = useState(false);
 
     const handleOnboarding = async () => {
         setLoading(true);
@@ -26,7 +27,10 @@ export default function StripeOnboardingButton() {
 
             const data = await response.json();
 
-            if (data.stripeUrl) {
+            if (data.verified) {
+                // mock mode — no redirect, just flip local UI state
+                setVerified(true);
+            } else if (data.stripeUrl) {
                 window.location.href = data.stripeUrl;
             }
 
@@ -46,13 +50,20 @@ export default function StripeOnboardingButton() {
             <p className="text-sm text-gray-500 mb-4">
                 To accept milestone payouts, you need to verify your identity and link your bank account via our secure payment partner, Stripe.
             </p>
-            <button
-                onClick={handleOnboarding}
-                disabled={loading}
-                className="w-full px-4 py-2 bg-[#10a37f] text-white font-medium rounded hover:bg-[#0e906f] transition-colors disabled:opacity-50"
-            >
-                {loading ? "Connecting to Stripe..." : "Verify Identity to Get Paid"}
-            </button>
+            {verified ? (
+                <div className="w-full px-4 py-2 bg-green-50 text-green-700 font-medium rounded border border-green-200 flex items-center justify-center gap-2">
+                    <i className="ti ti-circle-check text-[18px]"></i>
+                    Identity verified (mock)
+                </div>
+            ) : (
+                <button
+                    onClick={handleOnboarding}
+                    disabled={loading}
+                    className="w-full px-4 py-2 bg-[#10a37f] text-white font-medium rounded hover:bg-[#0e906f] transition-colors disabled:opacity-50"
+                >
+                    {loading ? "Connecting..." : "Verify Identity to Get Paid"}
+                </button>
+            )}
         </div>
     );
 }

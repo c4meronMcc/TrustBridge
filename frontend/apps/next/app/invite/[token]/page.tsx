@@ -83,9 +83,9 @@ export default function ProposalReview() {
 
             // 2. Extract the Stripe clientSecret from the backend response
             const data = await response.json();
-            const clientSecret = data.clientSecret;
+            const { clientSecret, paymentRequestId, provider } = data;
 
-            if (!clientSecret) {
+            if (!clientSecret && provider !== 'mock') {
                 throw new Error("Payment token generation failed.");
             }
 
@@ -102,7 +102,9 @@ export default function ProposalReview() {
                         clientName: proposal.clientName || proposal.clientEmail?.split('@')[0] || 'Client',
                         currency: proposal.currency,
                         currentMilestone: firstMilestone,
-                        clientSecret: clientSecret
+                        clientSecret,
+                        paymentRequestId,
+                        provider
                     };
 
                     sessionStorage.setItem(`trustbridge_checkout_${token}`, JSON.stringify(checkoutPayload));

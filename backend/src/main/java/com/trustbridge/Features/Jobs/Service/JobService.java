@@ -15,6 +15,7 @@ import com.trustbridge.Features.Jobs.Dto.PaymentActivationDto;
 import com.trustbridge.Features.Notifications.Listeners.JobEmailListener;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
+import com.trustbridge.Features.Payments.Provider.PaymentGateway;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class JobService {
     private final JobStateService jobStateService;
     private final MilestoneRepository milestoneRepository;
     private final PaymentRequestService paymentRequestService;
+    private final PaymentGateway paymentGateway;
     private final JobEmailListener jobEmailListener;
 
 
@@ -202,13 +204,13 @@ public class JobService {
                 .findFirstByJobIdOrderBySequenceOrderAsc(job.getId())
                 .orElseThrow(() -> new RuntimeException("No milestones found for this job."));
 
-        String clientSecret = paymentRequestService.getClientSecretForMilestone(firstMilestone.getId());
+        PaymentActivationDto responseData = paymentRequestService.getPaymentActivationDetails(firstMilestone.getId());
 
-        if (clientSecret == null) {
+        if (responseData.clientSecret() == null) {
             throw new RuntimeException("Stripe token was not generated.");
         }
 
-        return new PaymentActivationDto(clientSecret);
+        return responseData;
     }
 
     /**

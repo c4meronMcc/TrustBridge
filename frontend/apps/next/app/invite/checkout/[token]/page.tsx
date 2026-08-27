@@ -8,6 +8,7 @@ import { Elements } from '@stripe/react-stripe-js';
 
 // Import the form component we will build next
 import CheckoutForm from './CheckoutForm';
+import MockCheckoutForm from './MockCheckoutForm';
 
 // 2. INITIALIZE STRIPE OUTSIDE THE COMPONENT
 // This ensures Stripe doesn't reload on every single React re-render.
@@ -29,7 +30,9 @@ interface CheckoutData {
     clientEmail: string;
     currency: string;
     currentMilestone: Milestone;
-    clientSecret: string; // 👈 Make sure this is in your type!
+    clientSecret: string;
+    paymentRequestId: string;
+    provider: 'stripe' | 'mock';
 }
 
 const getCurrencySymbol = (currencyCode: string = 'GBP') => {
@@ -76,7 +79,7 @@ export default function CheckoutPage() {
         );
     }
 
-    if (error || !checkout || !checkout.clientSecret) {
+    if (error || !checkout || (!checkout.clientSecret && checkout.provider !== 'mock')) {
         return (
             <div className="min-h-screen bg-[#f4f6f1] dark:bg-[#0e1410] flex items-center justify-center p-4 font-sans">
                 <div className="bg-white dark:bg-[#161d18] p-8 rounded-[24px] border-[0.5px] border-red-200 dark:border-red-900/50 max-w-[640px] w-full text-center">
@@ -154,21 +157,29 @@ export default function CheckoutPage() {
 
             <div className="max-w-[1024px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-start">
 
-                {/* ── LEFT COLUMN: The Stripe Provider ── */}
+                {/* ── LEFT COLUMN: The Stripe/Mock Provider ── */}
                 <div className="lg:col-span-7 order-2 lg:order-1 space-y-4">
                     <div className="bg-white dark:bg-[#161d18] rounded-2xl border-[0.5px] border-[#dde4d9] dark:border-[#2a3a2d] overflow-hidden p-6">
 
-                        {/* 💥 THE MAGIC HAPPENS HERE */}
-                        <Elements stripe={stripePromise} options={options}>
-                            <CheckoutForm
+                        {checkout.provider === 'mock' ? (
+                            <MockCheckoutForm
                                 amount={fmtAmount}
                                 symbol={sym}
                                 jobToken={token}
-                                clientSecret={checkout.clientSecret}
-                                clientName={checkout.clientName}
-                                clientEmail={checkout.clientEmail}
+                                paymentRequestId={checkout.paymentRequestId}
                             />
-                        </Elements>
+                        ) : (
+                            <Elements stripe={stripePromise} options={options}>
+                                <CheckoutForm
+                                    amount={fmtAmount}
+                                    symbol={sym}
+                                    jobToken={token}
+                                    clientSecret={checkout.clientSecret}
+                                    clientName={checkout.clientName}
+                                    clientEmail={checkout.clientEmail}
+                                />
+                            </Elements>
+                        )}
 
                     </div>
                 </div>
