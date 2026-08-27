@@ -103,5 +103,4 @@ public class PaymentStateService {
     public void refundPayment(UUID paymentId) {
         fireEvent(paymentId, PaymentRequestEvent.REFUND_REQUEST, "isPaymentRefunded");
     }
-
 }
