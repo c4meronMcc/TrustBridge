@@ -4,8 +4,11 @@ import com.trustbridge.Domain.Entities.PaymentRequest;
 import com.trustbridge.Domain.Enums.PaymentRequestEvent;
 import com.trustbridge.Domain.Enums.PaymentRequestStatus;
 import com.trustbridge.Domain.Repositories.PaymentRequestRepository;
+import com.trustbridge.Features.Payments.Events.MilestoneFundedEvent;
 import com.trustbridge.Features.Payments.StateMachine.Interceptors.PaymentRequestChangeInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
@@ -17,10 +20,10 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class PaymentStateService {
 
-
-    PaymentRequestRepository paymentRequestRepository;
+    private final PaymentRequestRepository paymentRequestRepository;
 
     @Autowired
     StateMachineFactory<PaymentRequestStatus, PaymentRequestEvent> stateMachineFactory;
@@ -28,10 +31,8 @@ public class PaymentStateService {
     @Autowired
     PaymentRequestChangeInterceptor interceptor;
 
-    public PaymentStateService(PaymentRequestRepository paymentRequestRepository) {
-        this.paymentRequestRepository = paymentRequestRepository;
-    }
-
+    @Autowired
+    ApplicationEventPublisher eventPublisher;
 
     private StateMachine<PaymentRequestStatus, PaymentRequestEvent> buildStateMachine(UUID paymentId) {
 
@@ -102,5 +103,10 @@ public class PaymentStateService {
 
     public void refundPayment(UUID paymentId) {
         fireEvent(paymentId, PaymentRequestEvent.REFUND_REQUEST, "isPaymentRefunded");
+    }
+
+    public void confirmFunded(UUID paymentRequestId, UUID milestoneId) {
+        paymentSuccessful(paymentRequestId);
+        eventPublisher.publishEvent(new MilestoneFundedEvent(this, milestoneId));
     }
 }
