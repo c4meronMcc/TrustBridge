@@ -7,8 +7,10 @@ import com.trustbridge.Domain.Enums.JobStatus.*;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
+import com.trustbridge.Features.Jobs.Events.UnlockNextMilestoneEvent;
 import com.trustbridge.Features.Jobs.Service.MilestoneStateService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.action.Action;
@@ -29,8 +31,8 @@ import java.util.UUID;
 public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<jobStatus, jobEvent> {
 
     final private JobRepository jobRepository;
-    final private MilestoneStateService milestoneStateService;
     final private MilestoneRepository milestoneRepository;
+    final private ApplicationEventPublisher eventPublisher;
 
     /**
      * Configures the state machine with the initial state and all possible job states.
@@ -176,8 +178,7 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
             UUID jobId = context.getMessageHeaders().get("jobId", UUID.class);
 
             if (jobId != null) {
-                // The service handles finding out if it's the 1st, 2nd, or 10th milestone
-                milestoneStateService.activateNextLockedMilestoneForJob(jobId);
+                eventPublisher.publishEvent(new UnlockNextMilestoneEvent(this, jobId));
             }
         };
     }

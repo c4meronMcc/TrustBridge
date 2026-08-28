@@ -137,6 +137,14 @@ public class MilestoneService {
                 ))
                 .toList();
 
+        Milestones milestones = milestoneRepository.findById(milestoneId)
+                .orElseThrow();
+
+        UUID jobId = milestones.getJob().getId();
+
+        if (!anyUnfinishedMilestones(jobId)) {
+            jobStateService.allMilestonesCompleted(jobId);
+        }
 
         return new MilestoneSubmissionReviewDto(
                 submission.getId(),
@@ -173,12 +181,6 @@ public class MilestoneService {
 
         milestoneStateService.workApproved(milestoneId);
         milestoneStateService.releaseFunds(milestoneId);
-
-        UUID jobId = milestones.getJob().getId();
-
-        if (!anyUnfinishedMilestones(jobId)) {
-            jobStateService.allMilestonesCompleted(jobId);
-        }
     }
 
     @Transactional

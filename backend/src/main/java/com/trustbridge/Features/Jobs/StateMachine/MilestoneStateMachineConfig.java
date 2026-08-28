@@ -1,16 +1,21 @@
 package com.trustbridge.Features.Jobs.StateMachine;
 
+import com.trustbridge.Domain.Entities.Jobs;
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Entities.PaymentRequest;
 import com.trustbridge.Domain.Entities.Users;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
+import com.trustbridge.Domain.Enums.JobStatus;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Enums.MilestoneStatus.milestoneStatus;
 import com.trustbridge.Domain.Enums.MilestoneEvent.milestoneEvent;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.PaymentRequestRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
+import com.trustbridge.Features.Jobs.Events.MilestoneApprovedEvent;
+import com.trustbridge.Features.Jobs.Events.UnlockNextMilestoneEvent;
 import com.trustbridge.Features.Jobs.Service.JobStateService;
+import com.trustbridge.Features.Jobs.Service.MilestoneStateService;
 import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Payments.Config.StripeConfig;
@@ -20,8 +25,10 @@ import com.trustbridge.Features.Payments.Provider.PaymentGateway;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
 import com.trustbridge.Features.Payments.Service.StripeConnectService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
@@ -45,9 +52,9 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     private final EmailServiceImpl emailService;
     private final UserRepository userRepository;
     private final MilestoneEmailListener milestoneEmailListener;
-    private final StripeConnectService stripeConnectService;
     private final PaymentGateway paymentGateway;
     private final PaymentRequestRepository paymentRequestRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Configures the state machine states for the MilestoneStateMachineConfig.
@@ -140,6 +147,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                 .event(milestoneEvent.RELEASE_FUNDS)
                 .guard(isClientApprovingMilestoneGuard())
                 .action(releaseEscrowFundsAction())
+                .action(checkAndUnlockNextMilestone())
                 //Submitted -> Dispute (Work Disputed)
                 .and()
                 .withExternal()
@@ -274,6 +282,25 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
 
         };
     }
+
+    @Bean
+    public Action<milestoneStatus, milestoneEvent> checkAndUnlockNextMilestone() {
+        return context -> {
+            UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
+            Milestones milestone = milestoneRepository.findById(milestoneId)
+                    .orElseThrow(() -> new RuntimeException("Milestone not found!"));
+
+            if (!isJobCompleted(milestone)) {
+                eventPublisher.publishEvent(new UnlockNextMilestoneEvent(this, milestone.getJob().getId()));
+            }
+        };
+    }
+
+    private boolean isJobCompleted(Milestones milestone) {
+        return milestone.getJob().getStatus() == JobStatus.jobStatus.PAID_OUT;
+    }
+
+
 
     /**
      * Defines a guard condition that determines whether the "isFunded" condition is met
