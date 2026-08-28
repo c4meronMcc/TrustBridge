@@ -37,6 +37,7 @@ public class MilestoneService {
     private final MilestoneSubmissionRepository milestoneSubmissionRepository;
     private final MilestoneSubmissionFileRepository milestoneSubmissionFileRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final JobStateService jobStateService;
 
     /**
      * Creates and saves milestones for a given job based on the provided list of milestone DTOs.
@@ -172,6 +173,12 @@ public class MilestoneService {
 
         milestoneStateService.workApproved(milestoneId);
         milestoneStateService.releaseFunds(milestoneId);
+
+        UUID jobId = milestones.getJob().getId();
+
+        if (!anyUnfinishedMilestones(jobId)) {
+            jobStateService.allMilestonesCompleted(jobId);
+        }
     }
 
     @Transactional
@@ -190,5 +197,13 @@ public class MilestoneService {
 
         milestoneStateService.revokeSubmission(milestoneId);
         milestoneEmailListener.handleClientRequestedChangesToMilestone(milestoneId, feedback); // new method, Phase 5
+    }
+
+    private Boolean anyUnfinishedMilestones(UUID jobId) {
+
+        return milestoneRepository.existsByJobIdAndStatusNotIn(
+                jobId,
+                List.of(MilestoneStatus.milestoneStatus.PAID_OUT, MilestoneStatus.milestoneStatus.CANCELLED)
+        );
     }
 }

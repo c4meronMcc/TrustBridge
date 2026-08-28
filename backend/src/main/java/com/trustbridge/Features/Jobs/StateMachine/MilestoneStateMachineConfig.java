@@ -4,11 +4,13 @@ import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Entities.PaymentRequest;
 import com.trustbridge.Domain.Entities.Users;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
+import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Enums.MilestoneStatus.milestoneStatus;
 import com.trustbridge.Domain.Enums.MilestoneEvent.milestoneEvent;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.PaymentRequestRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
+import com.trustbridge.Features.Jobs.Service.JobStateService;
 import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Payments.Config.StripeConfig;
@@ -29,6 +31,7 @@ import org.springframework.statemachine.guard.Guard;
 import org.springframework.util.Assert;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
