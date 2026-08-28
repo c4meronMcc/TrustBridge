@@ -1,16 +1,20 @@
 package com.trustbridge.Features.Jobs.StateMachine;
 
 import com.trustbridge.Domain.Entities.Milestones;
+import com.trustbridge.Domain.Entities.PaymentRequest;
 import com.trustbridge.Domain.Entities.Users;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Enums.MilestoneStatus.milestoneStatus;
 import com.trustbridge.Domain.Enums.MilestoneEvent.milestoneEvent;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
+import com.trustbridge.Domain.Repositories.PaymentRequestRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Payments.Config.StripeConfig;
 import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
+import com.trustbridge.Features.Payments.Provider.Mock.MockPaymentGateway;
+import com.trustbridge.Features.Payments.Provider.PaymentGateway;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
 import com.trustbridge.Features.Payments.Service.StripeConnectService;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +43,8 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     private final UserRepository userRepository;
     private final MilestoneEmailListener milestoneEmailListener;
     private final StripeConnectService stripeConnectService;
+    private final PaymentGateway paymentGateway;
+    private final PaymentRequestRepository paymentRequestRepository;
 
     /**
      * Configures the state machine states for the MilestoneStateMachineConfig.
@@ -252,14 +258,17 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
 
             Users freelancer = milestone.getJob().getFreelancer();
 
+            PaymentRequest paymentRequest = paymentRequestRepository.findByMilestone(milestone)
+                    .orElseThrow(() -> new RuntimeException("Payment request not found!"));
+
             try {
-                stripeConnectService.releaseEscrowFunds(milestone, freelancer);
+                paymentGateway.releaseFunds(milestone, freelancer, paymentRequest);
                 Logger.getLogger("ACTION FIRED: Escrow funds released for Milestone " + milestoneId);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
 
-            
+
         };
     }
 
