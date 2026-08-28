@@ -73,6 +73,11 @@ public class PaymentEmailListener {
         log.info("received alert for milestone awaiting payment. Preparing email...", event.getMilestoneId());
 
         Milestones milestone = milestoneRepository.findById(event.getMilestoneId()).orElseThrow();
+
+        if (milestone.getSequenceOrder().equals(1)) {
+            return;
+        }
+
         String clientEmail = milestone.getJob().getClient().getEmail();
 
         String frontendJobUrl = "http://localhost:3000/dashboard/client/pay/" + event.getPaymentRequestId();
