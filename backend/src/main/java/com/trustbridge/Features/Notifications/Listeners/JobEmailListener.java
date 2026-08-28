@@ -4,6 +4,7 @@ import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Notifications.Services.TemplateEngineService;
+import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

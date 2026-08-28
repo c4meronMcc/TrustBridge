@@ -67,7 +67,7 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
                 .withExternal()
                 .source(jobStatus.DRAFT).target(jobStatus.PENDING_ACCEPTANCE)
                 .event(jobEvent.PUBLISH_OFFER)
-                // Draft -> Cancelled unsure if this should actually exist
+                // Draft -> Cancelled unsure if this should   actually exist
                 .and()
                 .withExternal()
                 .source(jobStatus.DRAFT).target(jobStatus.CANCELLED)

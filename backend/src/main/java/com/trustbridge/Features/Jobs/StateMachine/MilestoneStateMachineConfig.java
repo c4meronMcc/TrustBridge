@@ -20,6 +20,7 @@ import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Payments.Config.StripeConfig;
 import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
+import com.trustbridge.Features.Payments.Events.PaymentRequestCreatedEvent;
 import com.trustbridge.Features.Payments.Provider.Mock.MockPaymentGateway;
 import com.trustbridge.Features.Payments.Provider.PaymentGateway;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
@@ -185,7 +186,8 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      *
      * @return the action that performs payment request generation within the state machine.
      */
-    @Bean Action<milestoneStatus, milestoneEvent> generatePaymentRequestAction() {
+    @Bean
+    public Action<milestoneStatus, milestoneEvent> generatePaymentRequestAction() {
         return context -> {
             UUID milestoneId = context.getMessageHeaders().get( milestoneIdName , UUID.class);
 
@@ -194,11 +196,23 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                     .orElseThrow(() -> new RuntimeException("Milestone not found!"));
 
             try {
-                paymentRequestService.createPaymentRequest(milestones);
+                PaymentRequest paymentRequest = paymentRequestService.createPaymentRequest(milestones);
+                eventPublisher.publishEvent(new PaymentRequestCreatedEvent(this, milestoneId, paymentRequest.getId()));
                 Logger.getLogger("ACTION FIRED: Payment Request created for Milestone " + milestoneId);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        };
+    }
+
+    @Bean
+    public Action<milestoneStatus, milestoneEvent> notifyClientOfMilestonePaymentRequestAction() {
+        return context -> {
+            UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
+            Milestones milestone = milestoneRepository.findById(milestoneId)
+                    .orElseThrow(() -> new RuntimeException("Milestone not found!"));
+            Users client = userRepository.getById(context.getMessageHeaders().get("clientUserId", UUID.class));
+            String body = "This is a test email body. Please ignore. MILESTONE PAYMENT REQUEST";
         };
     }
 
@@ -222,6 +236,8 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
             UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
             Users freelancer = userRepository.getById(context.getMessageHeaders().get("freelancerId", UUID.class));
             String body = "This is a test email body. Please ignore. JOB ACCEPTED (CHANGE THIS TO HTML BODY)";
+
+
 
 
 

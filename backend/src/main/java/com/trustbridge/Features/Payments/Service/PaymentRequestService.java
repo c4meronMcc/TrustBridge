@@ -26,14 +26,15 @@ public class PaymentRequestService {
     private final PaymentGateway paymentGateway;
 
     @Transactional
-    public void createPaymentRequest(Milestones milestone) throws Exception {
+    public PaymentRequest createPaymentRequest(Milestones milestone) throws Exception {
 
         Optional<PaymentRequest> existingRequest = paymentRequestRepository
                 .findByMilestoneIdAndStatus(milestone.getId(), PaymentRequestStatus.PENDING);
 
         if (existingRequest.isPresent() && existingRequest.get().getExpiresAt().isAfter(OffsetDateTime.now())) {
-            return;
+            return existingRequest.get();
         }
+
 
         PaymentRequest paymentRequest = PaymentRequest.builder()
                 .milestone(milestone)
@@ -57,6 +58,8 @@ public class PaymentRequestService {
                 throw new UnsupportedOperationException("Escrow.com integration not yet implemented");
             }
         }
+
+        return paymentRequest;
     }
 
     public String getClientSecretForMilestone(UUID milestoneId) {
