@@ -20,7 +20,6 @@ public class MockEmailServiceImpl implements EmailSenderService {
     private final EmailLogRepository auditLogRepository;
 
     @Override
-    // 🚨 1. Add the UUID relatedEntityId parameter here
     public void sendEmail(String toAddress, String subject, EmailTemplateType emailTemplateType, String body, UUID relatedEntityId) {
         log.info("Mock email (suppressed) to: {} | Subject: {}", toAddress, subject);
 
@@ -28,8 +27,8 @@ public class MockEmailServiceImpl implements EmailSenderService {
                 .recipientEmail(toAddress)
                 .subject(subject)
                 .templateType(emailTemplateType)
-                .relatedEntityId(relatedEntityId) // 🚨 2. Save the UUID to the database
-                .status(EmailStatus.DELIVERED)    // Optional: good practice to mock the success status too
+                .relatedEntityId(relatedEntityId)
+                .status(EmailStatus.DELIVERED)
                 .build();
 
         auditLogRepository.save(auditlog);

@@ -2,6 +2,7 @@ package com.trustbridge.Features.Notifications.Listeners;
 
 import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
+import com.trustbridge.Features.Notifications.Services.EmailSenderService;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Notifications.Services.TemplateEngineService;
 import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
@@ -17,7 +18,7 @@ import java.util.UUID;
 @Component
 public class JobEmailListener {
 
-    private final EmailServiceImpl emailServiceImpl;
+    private final EmailSenderService emailSenderService;
     private final TemplateEngineService templateEngineService;
 
     /**
@@ -41,7 +42,7 @@ public class JobEmailListener {
 
         String htmlBody = templateEngineService.processTemplate("job-invite.html", emailData);
 
-        emailServiceImpl.sendEmail(
+        emailSenderService.sendEmail(
                 dto.clientEmail(),
                 "Project Proposal: " + dto.title(),
                 EmailTemplateType.JOB_INVITATION,

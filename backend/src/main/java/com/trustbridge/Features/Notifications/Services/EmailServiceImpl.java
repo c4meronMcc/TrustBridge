@@ -17,7 +17,7 @@ import java.util.UUID; // 🚨 Make sure to import UUID
 
 @Slf4j
 @Service
-@Profile("!prod")
+@Profile("!dev")
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailSenderService {
 

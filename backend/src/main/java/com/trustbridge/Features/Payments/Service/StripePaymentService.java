@@ -6,7 +6,7 @@
     import com.trustbridge.Domain.Entities.*;
     import com.trustbridge.Domain.Enums.PaymentRequestStatus;
     import com.trustbridge.Domain.Repositories.*;
-    import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
+    import com.trustbridge.Features.Notifications.Services.EmailSenderService;
     import lombok.RequiredArgsConstructor;
     import lombok.extern.slf4j.Slf4j;
     import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@
 
         private final StripeAccountRepository stripeAccountRepository;
         private final StripeCustomerRepository stripeCustomerRepository;
-        private final EmailServiceImpl emailServiceImpl;
+        private final EmailSenderService emailSenderService;
         private final PaymentRequestRepository paymentRequestRepository;
         private final BankPaymentSessionRepository bankPaymentSessionRepository;
         private final UserRepository usersRepository;

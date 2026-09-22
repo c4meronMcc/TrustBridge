@@ -5,6 +5,7 @@ import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.MilestoneSubmissionRepository;
+import com.trustbridge.Features.Notifications.Services.EmailSenderService;
 import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
 import com.trustbridge.Features.Notifications.Services.TemplateEngineService;
 import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
@@ -24,7 +25,7 @@ public class MilestoneEmailListener {
 
     private final MilestoneRepository milestoneRepository;
     private final MilestoneSubmissionRepository milestoneSubmissionRepository;
-    private final EmailServiceImpl emailServiceImpl;
+    private final EmailSenderService emailSenderService;
     private final TemplateEngineService templateEngineService;
 
     /**
@@ -63,7 +64,7 @@ public class MilestoneEmailListener {
 
         String htmlBody = templateEngineService.processTemplate("freelancer-submitted-milstone-email.html", emailData);
 
-        emailServiceImpl.sendEmail(
+        emailSenderService.sendEmail(
                 clientEmail,
                 "Milestone Awaiting Your Approval",
                 EmailTemplateType.WORK_SUBMITTED_FOR_REVIEW,
@@ -95,7 +96,7 @@ public class MilestoneEmailListener {
 
         String htmlBody = templateEngineService.processTemplate("freelancer-notification-that-client-has-received-email.html", emailData);
 
-        emailServiceImpl.sendEmail(
+        emailSenderService.sendEmail(
                 freelancerEmail,
                 "Milestone Awaiting Your Approval",
                 EmailTemplateType.WORK_SUBMITTED_FOR_REVIEW,

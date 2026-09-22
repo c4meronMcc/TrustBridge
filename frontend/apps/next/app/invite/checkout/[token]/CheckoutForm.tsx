@@ -31,8 +31,7 @@ export default function CheckoutForm({ amount, symbol, jobToken, clientName, cli
         if (!stripe) return;
         setIsLoading(true);
 
-        // 💥 THE FIX: Use the dedicated confirmPayByBankPayment method.
-        // This satisfies TypeScript and fires the instant bank redirect!
+
         const { error } = await stripe.confirmPayByBankPayment(clientSecret, {
             payment_method: {
                 billing_details: {

@@ -17,7 +17,7 @@ import com.trustbridge.Features.Jobs.Events.UnlockNextMilestoneEvent;
 import com.trustbridge.Features.Jobs.Service.JobStateService;
 import com.trustbridge.Features.Jobs.Service.MilestoneStateService;
 import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
-import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
+import com.trustbridge.Features.Notifications.Services.EmailSenderService;
 import com.trustbridge.Features.Payments.Config.StripeConfig;
 import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
 import com.trustbridge.Features.Payments.Events.PaymentRequestCreatedEvent;
@@ -50,7 +50,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
 
     private final MilestoneRepository milestoneRepository;
     private final PaymentRequestService paymentRequestService;
-    private final EmailServiceImpl emailService;
+    private final EmailSenderService emailService;
     private final UserRepository userRepository;
     private final MilestoneEmailListener milestoneEmailListener;
     private final PaymentGateway paymentGateway;

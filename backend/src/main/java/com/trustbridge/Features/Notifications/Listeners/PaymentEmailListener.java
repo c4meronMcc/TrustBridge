@@ -28,7 +28,7 @@ import java.util.Map;
 public class PaymentEmailListener {
 
     private final MilestoneRepository milestoneRepository;
-    private final EmailServiceImpl paymentEmailServiceImpl;
+    private final EmailSenderService paymentEmailServiceImpl;
     private final TemplateEngineService templateEngineService;
     private final EmailSenderService emailSenderService;
 

@@ -13,7 +13,7 @@ import com.trustbridge.Features.Auth.Service.RegistrationService;
 import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
 import com.trustbridge.Features.Jobs.Dto.PaymentActivationDto;
 import com.trustbridge.Features.Notifications.Listeners.JobEmailListener;
-import com.trustbridge.Features.Notifications.Services.EmailServiceImpl;
+import com.trustbridge.Features.Notifications.Services.EmailSenderService;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
 import com.trustbridge.Features.Payments.Provider.PaymentGateway;
 import jakarta.transaction.Transactional;
@@ -35,7 +35,7 @@ public class JobService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final RegistrationService registrationService;
-    private final EmailServiceImpl emailServiceImpl;
+    private final EmailSenderService emailSenderService;
     private final MilestoneService milestoneService;
     private final JobStateService jobStateService;
     private final MilestoneRepository milestoneRepository;
