@@ -75,4 +75,6 @@ public interface MilestoneRepository extends JpaRepository<Milestones, UUID> {
     Optional<Milestones> findFirstByJobIdOrderBySequenceOrderAsc(UUID jobId);
 
     List<Milestones> findTop10ByJobFreelancerIdOrderByUpdatedAtDesc(UUID freelancerId);
+
+    int countMilestonesById(UUID id);
 }

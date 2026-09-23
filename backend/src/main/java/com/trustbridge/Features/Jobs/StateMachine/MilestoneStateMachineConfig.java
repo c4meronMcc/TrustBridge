@@ -307,13 +307,30 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                     .orElseThrow(() -> new RuntimeException("Milestone not found!"));
 
             if (!isJobCompleted(milestone)) {
-                eventPublisher.publishEvent(new UnlockNextMilestoneEvent(this, milestone.getJob().getId()));
+                if (!isThisTheLastMilestone(milestone)) {
+                    eventPublisher.publishEvent(new UnlockNextMilestoneEvent(this, milestone.getJob().getId()));
+                }
+
+                // cause an event to be fired that will cause the job to be paid out
             }
         };
     }
 
     private boolean isJobCompleted(Milestones milestone) {
         return milestone.getJob().getStatus() == JobStatus.jobStatus.PAID_OUT;
+    }
+
+    private boolean isThisTheLastMilestone(Milestones milestone) {
+        // check for number of milestones and then return boolean of if this is the last of not
+        // true if last and false if not
+
+        int numberOfMilestones = milestoneRepository.countMilestonesById(milestone.getId());
+
+        if (numberOfMilestones == milestone.getSequenceOrder()) {
+            return true;
+        }
+
+        return false;
     }
 
 
