@@ -12,6 +12,7 @@ import com.trustbridge.Domain.Enums.MilestoneEvent.milestoneEvent;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.PaymentRequestRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
+import com.trustbridge.Features.Jobs.Events.AllMilestonesCompletedEvent;
 import com.trustbridge.Features.Jobs.Events.MilestoneApprovedEvent;
 import com.trustbridge.Features.Jobs.Events.UnlockNextMilestoneEvent;
 import com.trustbridge.Features.Jobs.Service.JobStateService;
@@ -309,9 +310,11 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
             if (!isJobCompleted(milestone)) {
                 if (!isThisTheLastMilestone(milestone)) {
                     eventPublisher.publishEvent(new UnlockNextMilestoneEvent(this, milestone.getJob().getId()));
+                } else {
+                    // Last milestone just paid out — kick off the job's own completion pipeline
+                    // rather than trying to unlock a next milestone that doesn't exist.
+                    eventPublisher.publishEvent(new AllMilestonesCompletedEvent(this, milestone.getJob().getId()));
                 }
-
-                // cause an event to be fired that will cause the job to be paid out
             }
         };
     }
@@ -320,17 +323,14 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
         return milestone.getJob().getStatus() == JobStatus.jobStatus.PAID_OUT;
     }
 
+    /**
+     * Determines whether the given milestone is the last one in its job's sequence,
+     * by comparing it against the milestone with the highest {@code sequenceOrder} for that job.
+     */
     private boolean isThisTheLastMilestone(Milestones milestone) {
-        // check for number of milestones and then return boolean of if this is the last of not
-        // true if last and false if not
-
-        int numberOfMilestones = milestoneRepository.countMilestonesById(milestone.getId());
-
-        if (numberOfMilestones == milestone.getSequenceOrder()) {
-            return true;
-        }
-
-        return false;
+        return milestoneRepository.findFirstByJobIdOrderBySequenceOrderDesc(milestone.getJob().getId())
+                .map(lastMilestone -> lastMilestone.getId().equals(milestone.getId()))
+                .orElse(false);
     }
 
 
