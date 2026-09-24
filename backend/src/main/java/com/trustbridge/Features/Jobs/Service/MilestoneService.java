@@ -2,6 +2,7 @@ package com.trustbridge.Features.Jobs.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.trustbridge.Domain.Entities.*;
+import com.trustbridge.Domain.Enums.JobStatus;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.MilestoneSubmissionFileRepository;
@@ -10,10 +11,13 @@ import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
 import com.trustbridge.Features.Jobs.Dto.MilestoneSubmission.MilestoneSubmissionReviewDto;
 import com.trustbridge.Features.Jobs.Dto.MilestoneSubmission.ScopeItemDto;
 import com.trustbridge.Features.Jobs.Dto.MilestoneSubmission.SubmissionFileDto;
+import com.trustbridge.Features.Jobs.Events.AllMilestonesCompletedEvent;
+import com.trustbridge.Features.Jobs.Events.UnlockNextMilestoneEvent;
 import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,6 +42,7 @@ public class MilestoneService {
     private final MilestoneSubmissionFileRepository milestoneSubmissionFileRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final JobStateService jobStateService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Creates and saves milestones for a given job based on the provided list of milestone DTOs.
@@ -140,12 +145,6 @@ public class MilestoneService {
         Milestones milestones = milestoneRepository.findById(milestoneId)
                 .orElseThrow();
 
-        UUID jobId = milestones.getJob().getId();
-
-        if (!anyUnfinishedMilestones(jobId)) {
-            jobStateService.allMilestonesCompleted(jobId);
-        }
-
         return new MilestoneSubmissionReviewDto(
                 submission.getId(),
                 milestoneId,
@@ -179,8 +178,30 @@ public class MilestoneService {
             throw new IllegalStateException("Milestone is not in SUBMITTED state");
         }
 
+
         milestoneStateService.workApproved(milestoneId);
         milestoneStateService.releaseFunds(milestoneId);
+
+        Milestones paid = milestoneRepository.findById(milestoneId).orElseThrow();
+        if (paid.getStatus() != MilestoneStatus.milestoneStatus.PAID_OUT) {
+            throw new IllegalStateException("Milestone did not reach PAID_OUT: " + paid.getStatus());
+        }
+
+        advanceJobAfterPayout(paid);
+    }
+
+    private void advanceJobAfterPayout(Milestones paidMilestone) {
+        UUID jobId = paidMilestone.getJob().getId();
+
+        if (paidMilestone.getJob().getStatus() == JobStatus.jobStatus.PAID_OUT) {
+            return;
+        }
+
+        if (anyUnfinishedMilestones(jobId)) {
+            eventPublisher.publishEvent(new UnlockNextMilestoneEvent(this, jobId));
+        } else {
+            eventPublisher.publishEvent(new AllMilestonesCompletedEvent(this, jobId));
+        }
     }
 
     @Transactional

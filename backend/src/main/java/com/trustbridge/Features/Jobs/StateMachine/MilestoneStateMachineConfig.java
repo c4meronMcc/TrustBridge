@@ -149,7 +149,6 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
                 .event(milestoneEvent.RELEASE_FUNDS)
                 .guard(isClientApprovingMilestoneGuard())
                 .action(releaseEscrowFundsAction())
-                .action(checkAndUnlockNextMilestone())
                 //Submitted -> Dispute (Work Disputed)
                 .and()
                 .withExternal()
