@@ -64,7 +64,6 @@ public class JobService {
                     .orElseGet(() -> registrationService.createGuestUser(dto));
         }
 
-        // Pass the email down to the save method
         Jobs savedJob = saveNewJob(dto, token, client, authenticatedEmail);
 
         if (client != null) {
