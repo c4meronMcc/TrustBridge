@@ -19,29 +19,29 @@ public class Dispute extends BaseEntity {
     private DisputeState state;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "job_id", referencedColumnName = "id",nullable = false)
+    @JoinColumn(name = "milestone_id", referencedColumnName = "id",nullable = false)
     private Milestones milestone;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mediator_id", referencedColumnName = "id",nullable = true)
     private Users mediator;
 
-    @Column(nullable = false)
+    @Column(name = "client_proposed_amount", nullable = false)
     private BigDecimal clientProposedAmount;
 
-    @Column(nullable = false)
+    @Column(name = "freelancer_proposed_amount", nullable = false)
     private BigDecimal freelancerProposedAmount;
 
-    @Column(nullable = false)
+    @Column(name = "negotiation_round", nullable = false)
     private Integer negotiationRound;
 
-    @Column(nullable = false)
+    @Column(name = "final_settlement_amount",nullable = false)
     private BigDecimal finalSettlementAmount;
 
-    @Column(nullable = false)
+    @Column(name = "final_settlement_currency", nullable = false)
     private String finalSettlementCurrency;
 
-    @Column(nullable = false, length = 500)
+    @Column(name = "resolution_reason", nullable = false, length = 500)
     private String resolutionReason;
 
 }

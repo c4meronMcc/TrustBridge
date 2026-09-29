@@ -8,7 +8,7 @@ public class MilestoneStatus {
         SUBMITTED,
         APPROVED,
         PAID_OUT,
-        DISPUTE_NEGOTIATION,
+        DISPUTED_NEGOTIATION,
         DISPUTE_ARBITRATION,
         DISPUTE_RESOLVED,
         CANCELLED

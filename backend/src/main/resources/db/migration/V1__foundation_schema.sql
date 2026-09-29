@@ -207,6 +207,50 @@ CREATE TABLE disputes (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Dispute Evidence table
+
+/*
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    milestone_id uuid NOT NULL REFERENCES milestones(id),
+    deliverable_link VARCHAR(2048),
+    notes TEXT,
+    scope_items_json TEXT,
+    submitted_by_id uuid NOT NULL REFERENCES users(id),
+    review_token varchar(64) UNIQUE,
+
+    CONSTRAINT fk_milestone_submissions_milestone
+               FOREIGN KEY (milestone_id)
+               REFERENCES milestones(id)
+               ON DELETE CASCADE
+*/
+CREATE TABLE dispute_evidence_submissions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    dispute_id uuid NOT NULL REFERENCES disputes(id),
+    reason TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Dispute Evidence Files table
+CREATE TABLE dispute_evidence_files (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    submission_id uuid NOT NULL,
+    original_filename VARCHAR(255),
+    stored_path VARCHAR(1024),
+    content_type VARCHAR(255),
+    size_bytes BIGINT,
+    sha_256_hash VARCHAR(64),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_dispute_evidence_files_submission
+        FOREIGN KEY (submission_id)
+            REFERENCES dispute_evidence_submissions (id)
+            ON DELETE CASCADE
+);
+
 -- Indexes
 CREATE INDEX idx_payment_requests_token ON payment_requests(payment_link_token);
 CREATE INDEX idx_payment_requests_stripe_session ON payment_requests(stripe_session_id);
