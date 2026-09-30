@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 
 public record DisputeCreationDto(
         @NotNull String milestoneId,
-        @Positive BigDecimal clientProposedAmount
-
+        @Positive BigDecimal clientProposedAmount,
+        @NotNull String reason,
+        @NotNull String
         ) {}
