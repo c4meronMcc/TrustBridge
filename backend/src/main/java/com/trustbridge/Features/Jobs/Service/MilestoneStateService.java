@@ -2,12 +2,14 @@ package com.trustbridge.Features.Jobs.Service;
 
 import com.trustbridge.Domain.Entities.Jobs;
 import com.trustbridge.Domain.Entities.Milestones;
+import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Features.Jobs.StateMachine.Interceptors.MilestoneStateChangeInterceptor;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
@@ -29,7 +31,9 @@ import java.util.UUID;
 public class MilestoneStateService {
 
     private final MilestoneRepository milestoneRepository;
-    private final StateMachineFactory<milestoneStatus, milestoneEvent> stateMachineFactory;
+
+    private final StateMachineFactory<MilestoneStatus, milestoneEvent> stateMachineFactory;
+
     private final MilestoneStateChangeInterceptor milestoneInterceptor;
     private final JobRepository jobRepository;
     private final PathPatternRequestMatcher.Builder builder;
@@ -42,12 +46,12 @@ public class MilestoneStateService {
      * @return A configured and initialized {@link StateMachine} instance representing the milestone's state and transitions.
      * @throws RuntimeException if the milestone with the specified ID is not found in the repository.
      */
-    private StateMachine<milestoneStatus, milestoneEvent> buildStateMachine(UUID milestoneId) {
+    private StateMachine<MilestoneStatus, milestoneEvent> buildStateMachine(UUID milestoneId) {
 
         Milestones milestone = milestoneRepository.findById(milestoneId)
                 .orElseThrow(() -> new RuntimeException("Milestone not found!"));
 
-        StateMachine<milestoneStatus, milestoneEvent> sm = stateMachineFactory.getStateMachine(milestoneId.toString());
+        StateMachine<MilestoneStatus, milestoneEvent> sm = stateMachineFactory.getStateMachine(milestoneId.toString());
 
         sm.stopReactively().block();
 
@@ -75,7 +79,7 @@ public class MilestoneStateService {
     @Transactional
     public void activateNextLockedMilestoneForJob(UUID jobId) {
         Optional<Milestones> nextLockedMilestone = milestoneRepository
-                .findFirstByJobIdAndStatusOrderBySequenceOrderAsc(jobId, milestoneStatus.LOCKED);
+                .findFirstByJobIdAndStatusOrderBySequenceOrderAsc(jobId, MilestoneStatus.LOCKED);
 
         if (nextLockedMilestone.isPresent()) {
             Milestones target = nextLockedMilestone.get();
@@ -108,7 +112,7 @@ public class MilestoneStateService {
      * @param event       The specific event to be fired, which may trigger a state transition in the state machine.
      */
     public void fireEvent(UUID milestoneId, milestoneEvent event, Map<String, Object> extraHeaders) {
-        StateMachine<milestoneStatus, milestoneEvent> sm = buildStateMachine(milestoneId);
+        StateMachine<MilestoneStatus, milestoneEvent> sm = buildStateMachine(milestoneId);
 
         MessageBuilder<milestoneEvent> builder = MessageBuilder
                 .withPayload(event)

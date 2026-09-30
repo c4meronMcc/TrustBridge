@@ -1,7 +1,7 @@
 package com.trustbridge.Domain.Entities;
 
 
-import com.trustbridge.Domain.Enums.MilestoneStatus.*;
+import com.trustbridge.Domain.Enums.MilestoneStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,7 +29,8 @@ public class Milestones extends BaseEntity {
     @Column(name = "sequence_order", nullable = false)
     private Integer sequenceOrder;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50 ,nullable = false)
-    private milestoneStatus status =  milestoneStatus.LOCKED;
+    private MilestoneStatus status = MilestoneStatus.LOCKED;
 }

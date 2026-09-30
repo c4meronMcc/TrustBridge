@@ -37,10 +37,10 @@ public class MilestoneFundedEventListener {
                 .orElseThrow(() -> new RuntimeException("Milestone not found for funding event!"));
 
 
-        milestone.setStatus(MilestoneStatus.milestoneStatus.IN_PROGRESS);
+        milestone.setStatus(MilestoneStatus.IN_PROGRESS);
         milestoneRepository.save(milestone);
 
-        log.info("✅ Milestone {} successfully updated to IN_PROGRESS", milestone.getId());
+        log.info("Milestone {} successfully updated to IN_PROGRESS", milestone.getId());
 
         Jobs job = milestone.getJob();
 
@@ -49,7 +49,7 @@ public class MilestoneFundedEventListener {
             job.setStatus(JobStatus.jobStatus.IN_PROGRESS);
             jobRepository.save(job);
 
-            log.info("✅ Parent Job {} successfully updated to IN_PROGRESS", job.getId());
+            log.info("Parent Job {} successfully updated to IN_PROGRESS", job.getId());
         }
     }
 }

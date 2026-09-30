@@ -65,7 +65,7 @@ public class MilestoneService {
                         .title(dto.title())
                         .amount(dto.amount())
                         .sequenceOrder(dto.sequence_amount())
-                        .status(MilestoneStatus.milestoneStatus.LOCKED)
+                        .status(MilestoneStatus.LOCKED)
                         .build()
                 ).toList();
 
@@ -78,7 +78,7 @@ public class MilestoneService {
 
         Milestones milestone = milestoneRepository.findById(milestoneId).orElseThrow();
 
-        if (milestone.getStatus() != MilestoneStatus.milestoneStatus.IN_PROGRESS) {
+        if (milestone.getStatus() != MilestoneStatus.IN_PROGRESS) {
             throw new IllegalStateException("Milestone is not in SUBMITTED_FOR_APPROVAL state");
         }
 
@@ -174,7 +174,7 @@ public class MilestoneService {
            throw new IllegalStateException("Milestone is not in SUBMITTED_FOR_APPROVAL state");
         }
 
-        if (milestones.getStatus() != MilestoneStatus.milestoneStatus.SUBMITTED) {
+        if (milestones.getStatus() != MilestoneStatus.SUBMITTED) {
             throw new IllegalStateException("Milestone is not in SUBMITTED state");
         }
 
@@ -183,7 +183,7 @@ public class MilestoneService {
         milestoneStateService.releaseFunds(milestoneId);
 
         Milestones paid = milestoneRepository.findById(milestoneId).orElseThrow();
-        if (paid.getStatus() != MilestoneStatus.milestoneStatus.PAID_OUT) {
+        if (paid.getStatus() != MilestoneStatus.PAID_OUT) {
             throw new IllegalStateException("Milestone did not reach PAID_OUT: " + paid.getStatus());
         }
 
@@ -214,7 +214,7 @@ public class MilestoneService {
             throw new AccessDeniedException("Only the client on this job can request changes");
         }
 
-        if (milestone.getStatus() != MilestoneStatus.milestoneStatus.SUBMITTED) {
+        if (milestone.getStatus() != MilestoneStatus.SUBMITTED) {
             throw new IllegalStateException("Milestone is not awaiting approval");
         }
 
@@ -226,7 +226,7 @@ public class MilestoneService {
 
         return milestoneRepository.existsByJobIdAndStatusNotIn(
                 jobId,
-                List.of(MilestoneStatus.milestoneStatus.PAID_OUT, MilestoneStatus.milestoneStatus.CANCELLED)
+                List.of(MilestoneStatus.PAID_OUT, MilestoneStatus.CANCELLED)
         );
     }
 }

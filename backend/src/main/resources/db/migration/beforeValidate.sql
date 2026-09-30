@@ -14,3 +14,5 @@ DROP TYPE IF EXISTS email_status cascade;
 DROP TYPE IF EXISTS email_template_type cascade;
 DROP TABLE IF EXISTS email_logs cascade;
 DROP TABLE IF EXISTS bank_payment_audit_log cascade;
+DROP TABLE IF EXISTS dispute_evidence_submissions cascade;
+DROP TABLE IF EXISTS dispute_evidence_files cascade;

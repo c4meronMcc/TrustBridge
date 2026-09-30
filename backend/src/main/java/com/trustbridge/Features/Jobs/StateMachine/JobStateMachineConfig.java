@@ -226,7 +226,7 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
             // that are NOT in a finished state?
             boolean hasUnfinishedWork = milestoneRepository.existsByJobIdAndStatusNotIn(
                     jobId,
-                    List.of(MilestoneStatus.milestoneStatus.PAID_OUT, MilestoneStatus.milestoneStatus.CANCELLED)
+                    List.of(MilestoneStatus.PAID_OUT, MilestoneStatus.CANCELLED)
             );
 
             // If there is NO unfinished work, the guard passes (returns true)

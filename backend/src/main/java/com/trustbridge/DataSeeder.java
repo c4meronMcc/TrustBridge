@@ -78,7 +78,7 @@ public class DataSeeder implements CommandLineRunner {
                 .title("Initial Wireframes")
                 .amount(new BigDecimal("3250.00"))
                 .sequenceOrder(1) // NOT NULL constraint
-                .status(MilestoneStatus.milestoneStatus.PAID_OUT) // Matches your SQL CHECK constraint
+                .status(MilestoneStatus.PAID_OUT) // Matches your SQL CHECK constraint
                 .build();
         milestoneRepository.save(milestone1);
 
@@ -109,7 +109,7 @@ public class DataSeeder implements CommandLineRunner {
                 .title("Database Schema & Auth")
                 .amount(new BigDecimal("6150.00"))
                 .sequenceOrder(1)
-                .status(MilestoneStatus.milestoneStatus.PAID_OUT) // Matches your SQL CHECK constraint
+                .status(MilestoneStatus.PAID_OUT) // Matches your SQL CHECK constraint
                 .build();
         milestoneRepository.save(milestone2);
 
@@ -140,7 +140,7 @@ public class DataSeeder implements CommandLineRunner {
                 .title("Final Logo & Brand Guidelines")
                 .amount(new BigDecimal("2400.00"))
                 .sequenceOrder(1)
-                .status(MilestoneStatus.milestoneStatus.IN_PROGRESS) // Your SQL uses PAID_OUT, not COMPLETED
+                .status(MilestoneStatus.IN_PROGRESS) // Your SQL uses PAID_OUT, not COMPLETED
                 .build();
         milestoneRepository.save(milestone3);
 

@@ -66,11 +66,11 @@ public interface MilestoneRepository extends JpaRepository<Milestones, UUID> {
     """)
     List<MilestoneSummaryDto> getMilestoneSummaryByJobId(@Param("jobId") UUID jobId);
 
-    Optional<Milestones> findFirstByJobIdAndStatusOrderBySequenceOrderAsc(UUID jobId, MilestoneStatus.milestoneStatus status);
+    Optional<Milestones> findFirstByJobIdAndStatusOrderBySequenceOrderAsc(UUID jobId, MilestoneStatus status);
 
-    boolean existsByJobIdAndStatusNotIn(UUID jobId, Collection<MilestoneStatus.milestoneStatus> completedStatuses);
+    boolean existsByJobIdAndStatusNotIn(UUID jobId, Collection<MilestoneStatus> completedStatuses);
 
-    Optional<Milestones> findByJobIdAndStatus(UUID jobId, MilestoneStatus.milestoneStatus status);
+    Optional<Milestones> findByJobIdAndStatus(UUID jobId, MilestoneStatus status);
 
     Optional<Milestones> findFirstByJobIdOrderBySequenceOrderAsc(UUID jobId);
 

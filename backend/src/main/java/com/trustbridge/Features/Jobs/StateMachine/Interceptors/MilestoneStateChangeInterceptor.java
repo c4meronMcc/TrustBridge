@@ -1,6 +1,7 @@
 package com.trustbridge.Features.Jobs.StateMachine.Interceptors;
 
 import com.trustbridge.Domain.Entities.Milestones;
+import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
@@ -16,7 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Component
-public class MilestoneStateChangeInterceptor extends StateMachineInterceptorAdapter<milestoneStatus, milestoneEvent> {
+public class MilestoneStateChangeInterceptor extends StateMachineInterceptorAdapter<MilestoneStatus, milestoneEvent> {
 
     @Autowired
     MilestoneRepository milestoneRepository;
@@ -33,11 +34,11 @@ public class MilestoneStateChangeInterceptor extends StateMachineInterceptorAdap
      * @param rootStateMachine the root state machine associated with the hierarchical structure of state machines
      */
     @Override
-    public void preStateChange(State<milestoneStatus, milestoneEvent> state,
+    public void preStateChange(State<MilestoneStatus, milestoneEvent> state,
                                Message<milestoneEvent> message,
-                               Transition<milestoneStatus, milestoneEvent> transition,
-                               StateMachine<milestoneStatus, milestoneEvent> stateMachine,
-                               StateMachine<milestoneStatus, milestoneEvent> rootStateMachine) {
+                               Transition<MilestoneStatus, milestoneEvent> transition,
+                               StateMachine<MilestoneStatus, milestoneEvent> stateMachine,
+                               StateMachine<MilestoneStatus, milestoneEvent> rootStateMachine) {
 
         Optional.ofNullable(message).ifPresent(msg -> {
 
@@ -49,7 +50,7 @@ public class MilestoneStateChangeInterceptor extends StateMachineInterceptorAdap
 
                 String initialState = milestone.getStatus().name();
 
-                milestone.setStatus(milestoneStatus.valueOf(state.getId().name()));
+                milestone.setStatus(MilestoneStatus.valueOf(state.getId().name()));
 
                 milestoneRepository.save(milestone);
 

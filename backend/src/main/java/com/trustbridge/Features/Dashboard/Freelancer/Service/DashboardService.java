@@ -99,7 +99,7 @@ public class DashboardService {
                 case AWAITING_PAYMENT -> "AWAITING_PAYMENT";
                 case LOCKED -> "JOB_CREATED";
                 // Map all dispute and cancelled states to a generic update to avoid breaking the UI
-                case  DISPUTE_NEGOTIATION, DISPUTE_ARBITRATION , DISPUTE_RESOLVED, CANCELLED -> "UPDATE";
+                case  DISPUTED_NEGOTIATION, DISPUTE_ARBITRATION , DISPUTE_RESOLVED, CANCELLED -> "UPDATE";
                 default -> "UPDATE";
             };
 

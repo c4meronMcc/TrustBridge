@@ -45,6 +45,7 @@ public class Jobs extends BaseEntity {
     @Column(name = "invite_token", unique = true, length = 64)
     private String inviteToken;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private jobStatus status = jobStatus.DRAFT;

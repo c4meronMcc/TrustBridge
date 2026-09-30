@@ -1,36 +1,27 @@
 package com.trustbridge.Features.Jobs.StateMachine;
 
-import com.trustbridge.Domain.Entities.Jobs;
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Entities.PaymentRequest;
 import com.trustbridge.Domain.Entities.Users;
 import com.trustbridge.Domain.Enums.EmailTemplateType;
 import com.trustbridge.Domain.Enums.JobStatus;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
-import com.trustbridge.Domain.Enums.MilestoneStatus.milestoneStatus;
 import com.trustbridge.Domain.Enums.MilestoneEvent.milestoneEvent;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.PaymentRequestRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
 import com.trustbridge.Features.Jobs.Events.AllMilestonesCompletedEvent;
-import com.trustbridge.Features.Jobs.Events.MilestoneApprovedEvent;
 import com.trustbridge.Features.Jobs.Events.UnlockNextMilestoneEvent;
-import com.trustbridge.Features.Jobs.Service.JobStateService;
-import com.trustbridge.Features.Jobs.Service.MilestoneStateService;
 import com.trustbridge.Features.Notifications.Listeners.MilestoneEmailListener;
 import com.trustbridge.Features.Notifications.Services.EmailSenderService;
-import com.trustbridge.Features.Payments.Config.StripeConfig;
 import com.trustbridge.Features.Payments.Events.MilestoneSubmittedForApprovalEvent;
 import com.trustbridge.Features.Payments.Events.PaymentRequestCreatedEvent;
-import com.trustbridge.Features.Payments.Provider.Mock.MockPaymentGateway;
 import com.trustbridge.Features.Payments.Provider.PaymentGateway;
 import com.trustbridge.Features.Payments.Service.PaymentRequestService;
-import com.trustbridge.Features.Payments.Service.StripeConnectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
@@ -47,7 +38,7 @@ import java.util.logging.Logger;
 @Configuration
 @EnableStateMachineFactory(name = "MilestoneStateMachineFactory")
 @RequiredArgsConstructor
-public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapter<milestoneStatus, milestoneEvent> {
+public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapter<MilestoneStatus, milestoneEvent> {
 
     private final MilestoneRepository milestoneRepository;
     private final PaymentRequestService paymentRequestService;
@@ -70,11 +61,11 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      * @throws Exception if an error occurs during state machine configuration
      */
     @Override
-    public void configure(StateMachineStateConfigurer<milestoneStatus, milestoneEvent> states) throws Exception {
+    public void configure(StateMachineStateConfigurer<MilestoneStatus, milestoneEvent> states) throws Exception {
         states
             .withStates()
-            .initial(milestoneStatus.LOCKED)
-            .states(EnumSet.allOf(milestoneStatus.class));
+            .initial(MilestoneStatus.LOCKED)
+            .states(EnumSet.allOf(MilestoneStatus.class));
     }
 
     /**
@@ -103,68 +94,68 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      * @throws Exception if an error occurs during state machine transition configuration
      */
     @Override
-    public void configure(StateMachineTransitionConfigurer<milestoneStatus, milestoneEvent> transitions) throws Exception {
+    public void configure(StateMachineTransitionConfigurer<MilestoneStatus, milestoneEvent> transitions) throws Exception {
         // UN-GUARDED STATE TRANSITIONS
         transitions
                 //Locked -> Awaiting Payment (Unlock)
                 .withExternal()
-                .source(milestoneStatus.LOCKED).target(milestoneStatus.AWAITING_PAYMENT)
+                .source(MilestoneStatus.LOCKED).target(MilestoneStatus.AWAITING_PAYMENT)
                 .event(milestoneEvent.UNLOCK)
                 .action(generatePaymentRequestAction())
                 //In Progress -> Submitted (Submitted Work)
                 .and()
                 .withExternal()
-                .source(milestoneStatus.IN_PROGRESS).target(milestoneStatus.SUBMITTED)
+                .source(MilestoneStatus.IN_PROGRESS).target(MilestoneStatus.SUBMITTED)
                 .event(milestoneEvent.SUBMITTED_WORK)
                 .action(notifyClientOfFreelancerMilestoneSubmissionAction())
                 .action(notifyFreelancerThatClientApprovalEmailHasSentAction())
                 //Submitted -> In Progress (Revoke Submission)
                 .and()
                 .withExternal()
-                .source(milestoneStatus.SUBMITTED).target(milestoneStatus.IN_PROGRESS)
+                .source(MilestoneStatus.SUBMITTED).target(MilestoneStatus.IN_PROGRESS)
                 .event(milestoneEvent.REVOKE_SUBMISSION)
                 //Submitted -> Approved (Work Approved)
                 .and()
                 .withExternal()
-                .source(milestoneStatus.SUBMITTED).target(milestoneStatus.APPROVED)
+                .source(MilestoneStatus.SUBMITTED).target(MilestoneStatus.APPROVED)
                 .event(milestoneEvent.WORK_APPROVED)
                 //Awaiting Payment -> Cancelled (Work Cancelled)
                 .and()
                 .withExternal()
-                .source(milestoneStatus.AWAITING_PAYMENT).target(milestoneStatus.CANCELLED)
+                .source(MilestoneStatus.AWAITING_PAYMENT).target(MilestoneStatus.CANCELLED)
                 .event(milestoneEvent.CANCEL_MILESTONE);
 
         // GUARDED STATE TRANSITIONS
         transitions
                 //Awaiting Payment -> In Progress (Funds Deposited)
                 .withExternal()
-                .source(milestoneStatus.AWAITING_PAYMENT).target(milestoneStatus.IN_PROGRESS)
+                .source(MilestoneStatus.AWAITING_PAYMENT).target(MilestoneStatus.IN_PROGRESS)
                 .event(milestoneEvent.FUNDS_DEPOSITED)
                 .guard(isFundedGuard())
                 .action(notifyFreelancerToStartAction())
                 //Approved -> Paid Out (Funds Paid)
                 .and()
                 .withExternal()
-                .source(milestoneStatus.APPROVED).target(milestoneStatus.PAID_OUT)
+                .source(MilestoneStatus.APPROVED).target(MilestoneStatus.PAID_OUT)
                 .event(milestoneEvent.RELEASE_FUNDS)
                 .guard(isClientApprovingMilestoneGuard())
                 .action(releaseEscrowFundsAction())
                 //Submitted -> Dispute (Work Disputed)
                 .and()
                 .withExternal()
-                .source(milestoneStatus.SUBMITTED).target(milestoneStatus.DISPUTE_NEGOTIATION)
+                .source(MilestoneStatus.SUBMITTED).target(MilestoneStatus.DISPUTED_NEGOTIATION)
                 .event(milestoneEvent.RAISE_DISPUTE)
                 .guard(onlyClientCanDisputeGuard())
                 //Dispute Negotiation -> Dispute Resolved (Dispute Resolved)
                 .and()
                 .withExternal()
-                .source(milestoneStatus.DISPUTE_NEGOTIATION).target(milestoneStatus.DISPUTE_RESOLVED)
+                .source(MilestoneStatus.DISPUTED_NEGOTIATION).target(MilestoneStatus.DISPUTE_RESOLVED)
                 .event(milestoneEvent.RESOLVE_DISPUTE)
                 .guard(mutualAgreementGuard())
                 //Dispute Negotiation -> Dispute Arbitration (Dispute to arbitration)
                 .and()
                 .withExternal()
-                .source(milestoneStatus.DISPUTE_NEGOTIATION).target(milestoneStatus.DISPUTE_ARBITRATION)
+                .source(MilestoneStatus.DISPUTED_NEGOTIATION).target(MilestoneStatus.DISPUTE_ARBITRATION)
                 .event(milestoneEvent.DISPUTE_TO_ARBITRATION)
                 .guard(escalationAllowedGuard());
     }
@@ -187,7 +178,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      * @return the action that performs payment request generation within the state machine.
      */
     @Bean
-    public Action<milestoneStatus, milestoneEvent> generatePaymentRequestAction() {
+    public Action<MilestoneStatus, milestoneEvent> generatePaymentRequestAction() {
         return context -> {
             UUID milestoneId = context.getMessageHeaders().get( milestoneIdName , UUID.class);
 
@@ -206,7 +197,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     }
 
     @Bean
-    public Action<milestoneStatus, milestoneEvent> notifyClientOfMilestonePaymentRequestAction() {
+    public Action<MilestoneStatus, milestoneEvent> notifyClientOfMilestonePaymentRequestAction() {
         return context -> {
             UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
             Milestones milestone = milestoneRepository.findById(milestoneId)
@@ -231,7 +222,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      *         to initiate work on the funded milestone.
      */
     @Bean
-    public Action<milestoneStatus, milestoneEvent> notifyFreelancerToStartAction() {
+    public Action<MilestoneStatus, milestoneEvent> notifyFreelancerToStartAction() {
         return context -> {
             UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
             Users freelancer = userRepository.getById(context.getMessageHeaders().get("freelancerId", UUID.class));
@@ -253,7 +244,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     }
 
     @Bean
-    public Action<milestoneStatus, milestoneEvent> notifyClientOfFreelancerMilestoneSubmissionAction() {
+    public Action<MilestoneStatus, milestoneEvent> notifyClientOfFreelancerMilestoneSubmissionAction() {
         return context -> {
             UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
 
@@ -265,7 +256,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     }
 
     @Bean
-    public Action<milestoneStatus, milestoneEvent> notifyFreelancerThatClientApprovalEmailHasSentAction() {
+    public Action<MilestoneStatus, milestoneEvent> notifyFreelancerThatClientApprovalEmailHasSentAction() {
         return context -> {
             UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
 
@@ -277,7 +268,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     }
 
     @Bean
-    public Action<milestoneStatus, milestoneEvent> releaseEscrowFundsAction() {
+    public Action<MilestoneStatus, milestoneEvent> releaseEscrowFundsAction() {
         return context -> {
             UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
             Milestones milestone = milestoneRepository.findById(milestoneId)
@@ -300,7 +291,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
     }
 
     @Bean
-    public Action<milestoneStatus, milestoneEvent> checkAndUnlockNextMilestone() {
+    public Action<MilestoneStatus, milestoneEvent> checkAndUnlockNextMilestone() {
         return context -> {
             UUID milestoneId = context.getMessageHeaders().get(milestoneIdName, UUID.class);
             Milestones milestone = milestoneRepository.findById(milestoneId)
@@ -347,7 +338,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      *         the state machine message headers.
      */
     @Bean
-    public Guard<milestoneStatus, milestoneEvent> isFundedGuard() {
+    public Guard<MilestoneStatus, milestoneEvent> isFundedGuard() {
         return context -> {
             Boolean isFunded = (Boolean) context.getMessageHeaders().get("isFunded");
             Logger.getLogger(getClass().getName()).info( guardExecuted + isFunded);
@@ -368,7 +359,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      *         the state machine message headers.
      */
     @Bean
-    public Guard<milestoneStatus, milestoneEvent> isClientApprovingMilestoneGuard() {
+    public Guard<MilestoneStatus, milestoneEvent> isClientApprovingMilestoneGuard() {
         return context -> {
             Boolean isClientApproving = (Boolean) context.getMessageHeaders().get("isClientApproving");
             Logger.getLogger(getClass().getName()).info( guardExecuted + isClientApproving);
@@ -389,7 +380,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      *         from the state machine message headers.
      */
     @Bean
-    public Guard<milestoneStatus, milestoneEvent> isPreviousMilestoneApprovedGuard() {
+    public Guard<MilestoneStatus, milestoneEvent> isPreviousMilestoneApprovedGuard() {
         return context -> {
             Boolean isPreviousMilestoneApproved = (Boolean) context.getMessageHeaders().get("isPreviousMilestoneApproved");
             Logger.getLogger(getClass().getName()).info(guardExecuted + isPreviousMilestoneApproved);
@@ -407,7 +398,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      * @return a {@link Guard} instance that validates if the user raising the dispute is either a client or an admin.
      */
     @Bean
-    public Guard<milestoneStatus, milestoneEvent> onlyClientCanDisputeGuard() {
+    public Guard<MilestoneStatus, milestoneEvent> onlyClientCanDisputeGuard() {
         return context -> {
             String userRole = context.getMessageHeaders().get("userRole", String.class);
             return "CLIENT".equals(userRole) || "ADMIN".equals(userRole);
@@ -431,7 +422,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      *         or administrative force conditions are satisfied.
      */
     @Bean
-    public Guard<milestoneStatus, milestoneEvent> mutualAgreementGuard() {
+    public Guard<MilestoneStatus, milestoneEvent> mutualAgreementGuard() {
         return context -> {
             Boolean bothPartiesAgreed = context.getMessageHeaders().get("bothPartiesAgreed", Boolean.class);
             String userRole = context.getMessageHeaders().get("userRole", String.class);
@@ -451,7 +442,7 @@ public class MilestoneStateMachineConfig extends EnumStateMachineConfigurerAdapt
      * @return a guard that evaluates if the escalation criteria are met
      */
     @Bean
-    public Guard<milestoneStatus, milestoneEvent> escalationAllowedGuard() {
+    public Guard<MilestoneStatus, milestoneEvent> escalationAllowedGuard() {
         return context -> {
             Integer daysInNegotiation = context.getMessageHeaders().get("daysInNegotiation", Integer.class);
 
