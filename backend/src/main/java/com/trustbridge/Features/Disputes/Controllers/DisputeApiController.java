@@ -2,7 +2,6 @@ package com.trustbridge.Features.Disputes.Controllers;
 
 import com.trustbridge.Features.Disputes.Dto.DisputeCreationDto;
 import com.trustbridge.Features.Disputes.Service.DisputeService;
-import com.trustbridge.Features.Jobs.Dto.JobCreationDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
