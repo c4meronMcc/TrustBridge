@@ -6,13 +6,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
-@Entity
-@Getter
-@Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
-@Table(name = "disputes")
+
 public class Dispute extends BaseEntity {
 
     @Column(nullable = false)
@@ -41,7 +35,7 @@ public class Dispute extends BaseEntity {
     @Column(name = "final_settlement_currency", nullable = false)
     private String finalSettlementCurrency;
 
-    @Column(name = "resolution_reason", nullable = false, length = 500)
+    @Column(name = "resolution_reason", length = 500)
     private String resolutionReason;
 
 }
