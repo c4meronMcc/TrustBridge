@@ -30,7 +30,7 @@ public class DisputeApiController {
 
         String authenticatedEmail = principal.getName();
 
-        disputeService.createNewDispute(dto, authenticatedEmail);
+        disputeService.createNewDispute(dto);
 
         return ResponseEntity.ok("Dispute Successfully Opened");
     }
