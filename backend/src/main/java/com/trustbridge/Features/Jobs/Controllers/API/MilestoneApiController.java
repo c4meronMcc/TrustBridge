@@ -46,7 +46,7 @@ public class MilestoneApiController {
 
     @GetMapping("/review/{milestoneId}")
     public ResponseEntity<MilestoneSubmissionReviewDto> getMilestoneSubmission(
-            @PathVariable("milestoneId") UUID milestoneId) { // <-- Explicitly mapped
+            @PathVariable("milestoneId") UUID milestoneId) {
         return ResponseEntity.ok(milestoneService.getSubmissionForReview(milestoneId));
     }
 

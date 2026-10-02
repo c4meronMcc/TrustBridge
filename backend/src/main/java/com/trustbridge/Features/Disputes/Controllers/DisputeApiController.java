@@ -5,12 +5,12 @@ import com.trustbridge.Features.Disputes.Service.DisputeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.security.Principal;
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -26,11 +26,11 @@ public class DisputeApiController {
      *         that the dispute has been successfully opened.
      */
     @PostMapping("/open-dispute")
-    public ResponseEntity<String> openDispute(@RequestBody @Valid DisputeCreationDto dto, Principal principal) {
+    public ResponseEntity<String> openDispute(@RequestBody @Valid DisputeCreationDto dto, Principal principal, @RequestParam(value = "files", required = false) List<MultipartFile> files) throws IOException {
 
         String authenticatedEmail = principal.getName();
 
-        disputeService.createNewDispute(dto);
+        disputeService.processClientDispute(dto, authenticatedEmail, files);
 
         return ResponseEntity.ok("Dispute Successfully Opened");
     }
