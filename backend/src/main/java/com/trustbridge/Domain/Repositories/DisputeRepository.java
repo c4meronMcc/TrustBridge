@@ -10,4 +10,5 @@ import java.util.UUID;
 
 @Repository
 public interface DisputeRepository extends JpaRepository<Dispute, UUID> {
+    Optional<Dispute> findBymilestonetId(UUID milestonetId);
 }

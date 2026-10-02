@@ -1,8 +1,10 @@
 package com.trustbridge.Features.Disputes.Service;
 
 import com.trustbridge.Domain.Entities.Dispute;
+import com.trustbridge.Domain.Entities.DisputeEvidenceSubmission;
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Entities.Users;
+import com.trustbridge.Domain.Repositories.DisputeEvidenceSubmissionRepository;
 import com.trustbridge.Domain.Repositories.DisputeRepository;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Domain.Repositories.UserRepository;
@@ -21,8 +23,17 @@ public class DisputeService {
 //    private final DisputeStateService disputeStateService;
     private final UserRepository userRepository;
     private final MilestoneRepository milestoneRepository;
+    private final DisputeEvidenceSubmissionRepository disputeEvidenceSubmissionRepository;
 
     public void processClientDispute(DisputeCreationDto dto, String authenicatedEmail) {
+
+        Boolean userAuth = userRepository.findByEmail(authenicatedEmail).isPresent();
+
+        if (userAuth) {
+            createNewDispute(dto);
+            addSubmissionToDispute(dto);
+
+        }
 
     }
 
@@ -39,6 +50,20 @@ public class DisputeService {
 
         disputeRepository.save(newDispute);
 
+    }
+
+    @Transactional
+    public void addSubmissionToDispute(DisputeCreationDto dto) {
+
+        Dispute dispute = disputeRepository.findBymilestonetId(UUID.fromString(dto.milestoneId()))
+                .orElseThrow(() -> new RuntimeException("Dispute not found"));
+
+        DisputeEvidenceSubmission submission = DisputeEvidenceSubmission.builder()
+                .dispute(dispute)
+                .reason(dto.reason())
+                .build();
+
+        disputeEvidenceSubmissionRepository.save(submission);
     }
 
 }
