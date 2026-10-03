@@ -8,7 +8,7 @@ import java.util.List;
 
 public record DisputeCreationDto(
         @NotNull String milestoneId,
-        @Positive BigDecimal clientProposedAmount,
+        @Positive @NotNull BigDecimal clientProposedAmount,
         @NotNull String reason,
 
         @NotNull List<DisputeSubmissionFilesDto> files
