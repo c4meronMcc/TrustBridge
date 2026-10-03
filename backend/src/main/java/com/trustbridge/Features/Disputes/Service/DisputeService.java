@@ -30,6 +30,10 @@ public class DisputeService {
         Boolean userAuth = userRepository.findByEmail(authenicatedEmail).isPresent();
 
         if (userAuth) {
+
+        }
+
+        if (userAuth) {
             createNewDispute(dto);
             DisputeEvidenceSubmission submission = addSubmissionToDispute(dto);
             addDisputeEvidenceFiles(dto, submission, files);
@@ -46,6 +50,7 @@ public class DisputeService {
         Dispute newDispute = Dispute.builder()
                 .milestone(milestone)
                 .clientProposedAmount(dto.clientProposedAmount())
+                .finalSettlementCurrency(milestone.getJob().getCurrency())
                 .build();
 
         disputeRepository.save(newDispute);

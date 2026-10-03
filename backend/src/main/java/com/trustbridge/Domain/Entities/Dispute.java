@@ -17,7 +17,7 @@ public class Dispute extends BaseEntity {
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     private DisputeState state = DisputeState.AWAITING_DISPUTE_DECISION;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -31,9 +31,10 @@ public class Dispute extends BaseEntity {
     @Column(name = "client_proposed_amount", nullable = false)
     private BigDecimal clientProposedAmount;
 
-    @Column(name = "freelancer_proposed_amount", nullable = false)
+    @Column(name = "freelancer_proposed_amount")
     private BigDecimal freelancerProposedAmount;
 
+    @Builder.Default
     @Column(name = "negotiation_round", nullable = false)
     private Integer negotiationRound = 0;
 
