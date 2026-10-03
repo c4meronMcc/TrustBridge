@@ -9,4 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface DisputeEvidenceSubmissionRepository extends JpaRepository<DisputeEvidenceSubmission, UUID> {
+    DisputeEvidenceSubmission findByDisputeId(UUID disputeId);
 }
