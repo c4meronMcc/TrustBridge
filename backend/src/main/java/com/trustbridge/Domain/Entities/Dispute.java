@@ -18,7 +18,7 @@ public class Dispute extends BaseEntity {
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private DisputeState state = DisputeState.AWAITING_DISPUTE_DECISION;
+    private DisputeState state = DisputeState.AWAITING_EVIDENCE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "milestone_id", referencedColumnName = "id")
