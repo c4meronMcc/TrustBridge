@@ -60,7 +60,7 @@ public class DisputeService {
     @Transactional
     public DisputeEvidenceSubmission addSubmissionToDispute(DisputeCreationDto dto) {
 
-        Dispute dispute = disputeRepository.findBymilestonetId(UUID.fromString(dto.milestoneId()))
+        Dispute dispute = disputeRepository.findByMilestoneId(UUID.fromString(dto.milestoneId()))
                 .orElseThrow(() -> new RuntimeException("Dispute not found"));
 
         DisputeEvidenceSubmission submission = DisputeEvidenceSubmission.builder()
@@ -76,7 +76,7 @@ public class DisputeService {
     @Transactional
     public void addDisputeEvidenceFiles(DisputeCreationDto dto, DisputeEvidenceSubmission submission, List<MultipartFile> files) {
 
-        Dispute dispute = disputeRepository.findBymilestonetId(UUID.fromString(dto.milestoneId()))
+        Dispute dispute = disputeRepository.findByMilestoneId(UUID.fromString(dto.milestoneId()))
                 .orElseThrow(() -> new RuntimeException("Dispute not found"));
 
         /*
