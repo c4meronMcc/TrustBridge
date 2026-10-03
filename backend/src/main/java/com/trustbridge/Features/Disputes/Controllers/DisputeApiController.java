@@ -4,6 +4,7 @@ import com.trustbridge.Features.Disputes.Dto.DisputeCreationDto;
 import com.trustbridge.Features.Disputes.Service.DisputeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,8 +26,12 @@ public class DisputeApiController {
      * @return a ResponseEntity containing a success message indicating
      *         that the dispute has been successfully opened.
      */
-    @PostMapping("/open-dispute")
-    public ResponseEntity<String> openDispute(@RequestBody @Valid DisputeCreationDto dto, Principal principal, @RequestParam(value = "files", required = false) List<MultipartFile> files) throws IOException {
+    @PostMapping(value = "/open-dispute", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> openDispute(
+            @RequestPart("dto") @Valid DisputeCreationDto dto,
+            Principal principal,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
+    ) throws IOException {
 
         String authenticatedEmail = principal.getName();
 
