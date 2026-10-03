@@ -21,14 +21,14 @@ public class Dispute extends BaseEntity {
     private DisputeState state = DisputeState.AWAITING_DISPUTE_DECISION;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "milestone_id", referencedColumnName = "id",nullable = false)
+    @JoinColumn(name = "milestone_id", referencedColumnName = "id")
     private Milestones milestone;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mediator_id", referencedColumnName = "id",nullable = true)
+    @JoinColumn(name = "mediator_id", referencedColumnName = "id")
     private Users mediator;
 
-    @Column(name = "client_proposed_amount", nullable = false)
+    @Column(name = "client_proposed_amount")
     private BigDecimal clientProposedAmount;
 
     @Column(name = "freelancer_proposed_amount")
@@ -41,7 +41,7 @@ public class Dispute extends BaseEntity {
     @Column(name = "final_settlement_amount")
     private BigDecimal finalSettlementAmount;
 
-    @Column(name = "final_settlement_currency", nullable = false)
+    @Column(name = "final_settlement_currency")
     private String finalSettlementCurrency;
 
     @Column(name = "resolution_reason", length = 500)
