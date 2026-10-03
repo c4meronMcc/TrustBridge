@@ -202,7 +202,7 @@ CREATE TABLE disputes (
     negotiation_round INTEGER NOT NULL DEFAULT 0,
     final_settlement_amount DECIMAL(19, 4),
     final_settlement_currency VARCHAR(3) NOT NULL DEFAULT 'GBP',
-    resolution_reason VARCHAR(500) NOT NULL,
+    resolution_reason VARCHAR(500),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
