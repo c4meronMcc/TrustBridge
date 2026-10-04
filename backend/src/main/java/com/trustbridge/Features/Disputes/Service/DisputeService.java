@@ -31,6 +31,13 @@ public class DisputeService {
     @Transactional
     public void processClientDispute(DisputeCreationDto dto, String authenicatedEmail, List<MultipartFile> files) throws IOException {
 
+        Boolean isDisputeActive = disputeRepository.findByMilestoneId(UUID.fromString(dto.milestoneId()))
+                .isPresent();
+
+        if (isDisputeActive) {
+            throw new AccessDeniedException("Dispute already exists for this milestone");
+        }
+
         Milestones milestone = milestoneRepository.findById(UUID.fromString(dto.milestoneId()))
                 .orElseThrow(() -> new AccessDeniedException("Milestone not found"));
 
