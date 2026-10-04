@@ -1,6 +1,7 @@
 package com.trustbridge.Features.Disputes.Service;
 
 import com.trustbridge.Domain.Entities.*;
+import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Repositories.*;
 import com.trustbridge.Features.Disputes.Dto.DisputeCreationDto;
 import com.trustbridge.Features.Disputes.Dto.DisputeSubmissionFilesDto;
@@ -33,7 +34,7 @@ public class DisputeService {
         Milestones milestone = milestoneRepository.findById(UUID.fromString(dto.milestoneId()))
                 .orElseThrow(() -> new AccessDeniedException("Milestone not found"));
 
-        if (milestone.getJob().getClient().getEmail().equals(authenicatedEmail)) {
+        if (milestone.getJob().getClient().getEmail().equals(authenicatedEmail) && milestone.getStatus() == MilestoneStatus.SUBMITTED) {
             createNewDispute(dto);
             DisputeEvidenceSubmission submission = addSubmissionToDispute(dto);
             addDisputeEvidenceFiles(dto, submission, files);
