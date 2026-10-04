@@ -88,26 +88,6 @@ public class DisputeService {
         Dispute dispute = disputeRepository.findByMilestoneId(UUID.fromString(dto.milestoneId()))
                 .orElseThrow(() -> new RuntimeException("Dispute not found"));
 
-        /*
-        * if (files != null && !files.isEmpty()) {
-            for (MultipartFile file : files) {
-                if (!file.isEmpty()) {
-                    String storedPath = fileStorageService.storeFile(file);
-
-                    MilestoneSubmissionFile submissionFile = MilestoneSubmissionFile.builder()
-                            .submission(submission)
-                            .originalFilename(file.getOriginalFilename())
-                            .storedPath(storedPath)
-                            .contentType(file.getContentType())
-                            .sizeBytes(file.getSize())
-                            .build();
-
-                    milestoneSubmissionFileRepository.save(submissionFile);
-                }
-            }
-        }
-        * */
-
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
