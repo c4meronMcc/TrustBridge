@@ -45,6 +45,8 @@ public class DisputeService {
             createNewDispute(dto);
             DisputeEvidenceSubmission submission = addSubmissionToDispute(dto);
             addDisputeEvidenceFiles(dto, submission, files);
+        } else {
+            throw new AccessDeniedException("You are not authorized to create a dispute for this milestone");
         }
 
     }
