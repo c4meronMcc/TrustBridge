@@ -4,11 +4,13 @@ import com.trustbridge.Domain.Entities.*;
 import com.trustbridge.Domain.Repositories.*;
 import com.trustbridge.Features.Disputes.Dto.DisputeCreationDto;
 import com.trustbridge.Features.Disputes.Dto.DisputeSubmissionFilesDto;
+import com.trustbridge.Features.Jobs.Service.FileStorageService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,8 +24,9 @@ public class DisputeService {
     private final MilestoneRepository milestoneRepository;
     private final DisputeEvidenceSubmissionRepository disputeEvidenceSubmissionRepository;
     private final DisputeEvidenceFilesRepository disputeEvidenceFilesRepository;
+    private final FileStorageService fileStorageService;
 
-    public void processClientDispute(DisputeCreationDto dto, String authenicatedEmail, List<MultipartFile> files) {
+    public void processClientDispute(DisputeCreationDto dto, String authenicatedEmail, List<MultipartFile> files) throws IOException {
 
         Milestones milestone = milestoneRepository.findById(UUID.fromString(dto.milestoneId()))
                 .orElseThrow(() -> new RuntimeException("Milestone not found"));
@@ -49,7 +52,6 @@ public class DisputeService {
                 .build();
 
         disputeRepository.save(newDispute);
-
     }
 
     @Transactional
@@ -69,7 +71,7 @@ public class DisputeService {
     }
 
     @Transactional
-    public void addDisputeEvidenceFiles(DisputeCreationDto dto, DisputeEvidenceSubmission submission, List<MultipartFile> files) {
+    public void addDisputeEvidenceFiles(DisputeCreationDto dto, DisputeEvidenceSubmission submission, List<MultipartFile> files) throws IOException {
 
         Dispute dispute = disputeRepository.findByMilestoneId(UUID.fromString(dto.milestoneId()))
                 .orElseThrow(() -> new RuntimeException("Dispute not found"));
@@ -97,7 +99,7 @@ public class DisputeService {
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
-                    String storedPath = file.getOriginalFilename();
+                    String storedPath = fileStorageService.storeFile(file);
 
                     DisputeEvidenceFiles submissionFile =DisputeEvidenceFiles.builder()
                             .submission(submission)
