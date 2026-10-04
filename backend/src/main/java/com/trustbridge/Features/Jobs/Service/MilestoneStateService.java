@@ -91,6 +91,13 @@ public class MilestoneStateService {
         }
     }
 
+    /**
+     * Moves a milestone into the submission state and transitions its status
+     * to "SUBMITTED_WORK". If the milestone with the given ID is not found,
+     * a runtime exception is thrown.
+     *
+     * @param milestoneId the unique identifier of the milestone to be moved into the submission state
+     */
     @Transactional
     public void moveMilestoneIntoSubmission(UUID milestoneId) {
         Milestones milestone = milestoneRepository.findById(milestoneId)

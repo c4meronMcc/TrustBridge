@@ -5,7 +5,9 @@ import com.trustbridge.Domain.Enums.DisputeEvent;
 import com.trustbridge.Domain.Enums.DisputeState;
 import com.trustbridge.Domain.Repositories.DisputeRepository;
 import com.trustbridge.Features.Disputes.StateMachine.Interceptors.DisputeStateChangeInterceptor;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -17,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DisputeStateService {
@@ -59,6 +62,20 @@ public class DisputeStateService {
         sm.startReactively().block();
 
         return sm;
+    }
+
+    @Transactional
+    public void moveDisputeIntoSubmission(UUID disputeId) {
+
+        Dispute dispute = disputeRepository.findById(disputeId)
+                .orElseThrow(() -> new RuntimeException("Dispute not found!"));
+
+        try {
+            this.disputeEvidenceSubmitted(disputeId);
+            log.info("Dispute {} moved into SUBMITTED_EVIDENCE state", dispute.getId());
+        } catch (Exception e) {
+            log.error("Error moving dispute into SUBMITTED_EVIDENCE state: {}", e.getMessage());
+        }
     }
 
     /**
