@@ -1,10 +1,7 @@
 package com.trustbridge.Features.Disputes.Service;
 
 import com.trustbridge.Domain.Entities.*;
-import com.trustbridge.Domain.Repositories.DisputeEvidenceSubmissionRepository;
-import com.trustbridge.Domain.Repositories.DisputeRepository;
-import com.trustbridge.Domain.Repositories.MilestoneRepository;
-import com.trustbridge.Domain.Repositories.UserRepository;
+import com.trustbridge.Domain.Repositories.*;
 import com.trustbridge.Features.Disputes.Dto.DisputeCreationDto;
 import com.trustbridge.Features.Disputes.Dto.DisputeSubmissionFilesDto;
 import jakarta.transaction.Transactional;
@@ -24,6 +21,7 @@ public class DisputeService {
     private final UserRepository userRepository;
     private final MilestoneRepository milestoneRepository;
     private final DisputeEvidenceSubmissionRepository disputeEvidenceSubmissionRepository;
+    private final DisputeEvidenceFilesRepository disputeEvidenceFilesRepository;
 
     public void processClientDispute(DisputeCreationDto dto, String authenicatedEmail, List<MultipartFile> files) {
 
@@ -104,14 +102,14 @@ public class DisputeService {
                 if (!file.isEmpty()) {
                     String storedPath = file.getOriginalFilename();
 
-                    DisputeEvidenceFiles.builder()
+                    DisputeEvidenceFiles submissionFile =DisputeEvidenceFiles.builder()
                             .submission(submission)
                             .fileName(file.getOriginalFilename())
                             .storedPath(storedPath)
                             .contentType(file.getContentType())
                             .sizeBytes(file.getSize())
                             .build();
-                    disputeEvidenceSubmissionRepository.save(submission);
+                    disputeEvidenceFilesRepository.save(submissionFile);
                 }
             }
         }
