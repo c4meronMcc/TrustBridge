@@ -25,13 +25,10 @@ public class DisputeService {
 
     public void processClientDispute(DisputeCreationDto dto, String authenicatedEmail, List<MultipartFile> files) {
 
-        Boolean userAuth = userRepository.findByEmail(authenicatedEmail).isPresent();
+        Milestones milestone = milestoneRepository.findById(UUID.fromString(dto.milestoneId()))
+                .orElseThrow(() -> new RuntimeException("Milestone not found"));
 
-        if (userAuth) {
-
-        }
-
-        if (userAuth) {
+        if (milestone.getJob().getClient().getEmail().equals(authenicatedEmail)) {
             createNewDispute(dto);
             DisputeEvidenceSubmission submission = addSubmissionToDispute(dto);
             addDisputeEvidenceFiles(dto, submission, files);
