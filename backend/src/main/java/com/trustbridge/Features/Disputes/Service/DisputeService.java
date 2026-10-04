@@ -7,6 +7,7 @@ import com.trustbridge.Features.Disputes.Dto.DisputeSubmissionFilesDto;
 import com.trustbridge.Features.Jobs.Service.FileStorageService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,10 +27,11 @@ public class DisputeService {
     private final DisputeEvidenceFilesRepository disputeEvidenceFilesRepository;
     private final FileStorageService fileStorageService;
 
+    @Transactional
     public void processClientDispute(DisputeCreationDto dto, String authenicatedEmail, List<MultipartFile> files) throws IOException {
 
         Milestones milestone = milestoneRepository.findById(UUID.fromString(dto.milestoneId()))
-                .orElseThrow(() -> new RuntimeException("Milestone not found"));
+                .orElseThrow(() -> new AccessDeniedException("Milestone not found"));
 
         if (milestone.getJob().getClient().getEmail().equals(authenicatedEmail)) {
             createNewDispute(dto);
