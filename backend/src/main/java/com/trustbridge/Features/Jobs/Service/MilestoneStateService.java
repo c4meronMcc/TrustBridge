@@ -1,8 +1,10 @@
 package com.trustbridge.Features.Jobs.Service;
 
+import com.trustbridge.Domain.Entities.Dispute;
 import com.trustbridge.Domain.Entities.Jobs;
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
+import com.trustbridge.Domain.Repositories.DisputeRepository;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Features.Jobs.StateMachine.Interceptors.MilestoneStateChangeInterceptor;
@@ -31,6 +33,7 @@ import java.util.UUID;
 public class MilestoneStateService {
 
     private final MilestoneRepository milestoneRepository;
+    private final DisputeRepository disputeRepository;
 
     private final StateMachineFactory<MilestoneStatus, milestoneEvent> stateMachineFactory;
 
@@ -106,6 +109,19 @@ public class MilestoneStateService {
         try {
             this.workedSubmitted(milestoneId);
             log.info("Milestone {} moved into SUBMITTED_WORK state", milestone.getId());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Transactional
+    public void moveMilestoneIntoDispute(UUID milestoneId) {
+        Dispute dispute = disputeRepository.findByMilestoneId(milestoneId)
+                .orElseThrow(() -> new RuntimeException("Dispute not found!"));
+
+        try {
+            this.disputeRaised(milestoneId);
+            log.info("Milestone  {} moved into DISPUTE_NEGOTIATION state", dispute.getMilestone().getId());
         } catch (Exception e) {
             e.printStackTrace();
         }

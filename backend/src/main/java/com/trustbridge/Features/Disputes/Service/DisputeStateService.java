@@ -24,7 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DisputeStateService {
 
-    DisputeRepository disputeRepository;
+    private final DisputeRepository disputeRepository;
 
     @Autowired
     StateMachineFactory<DisputeState, DisputeEvent> stateMachineFactory;

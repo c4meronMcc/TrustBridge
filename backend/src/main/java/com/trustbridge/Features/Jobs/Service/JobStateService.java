@@ -1,11 +1,18 @@
 package com.trustbridge.Features.Jobs.Service;
 
+import com.trustbridge.Domain.Entities.Dispute;
 import com.trustbridge.Domain.Entities.Jobs;
+import com.trustbridge.Domain.Entities.Milestones;
+import com.trustbridge.Domain.Enums.MilestoneStatus;
+import com.trustbridge.Domain.Repositories.DisputeRepository;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Enums.JobStatus.*;
 import com.trustbridge.Domain.Enums.JobEvent.*;
+import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Features.Jobs.StateMachine.Interceptors.JobStateChangeInterceptor;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -19,17 +26,36 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JobStateService {
 
     private final JobRepository jobRepository;
+    private final MilestoneRepository milestoneRepository;
 
     @Autowired
     StateMachineFactory<jobStatus, jobEvent> stateMachineFactory;
 
     @Autowired
     JobStateChangeInterceptor jobInterceptor;
+
+
+    @Transactional
+    public void moveJobintoDispute(UUID jobId, UUID milestoneId) {
+        Milestones milestone = milestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new RuntimeException("milestone not found!"));
+
+        if (milestone.getJob().getId().equals(jobId) && milestone.getStatus().equals(MilestoneStatus.DISPUTED_NEGOTIATION)) {
+            try {
+                this.raiseDispute(jobId);
+                log.info("Dispute  {} moved into Dispute State", jobId);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
 
     /**
      * Builds and initializes a state machine for the specified job.

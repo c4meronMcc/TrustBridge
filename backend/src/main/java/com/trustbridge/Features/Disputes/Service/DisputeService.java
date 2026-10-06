@@ -52,8 +52,8 @@ public class DisputeService {
             addDisputeEvidenceFiles(dto, submission, files);
 
             disputeStateService.moveDisputeIntoSubmission(submission.getDispute().getId());
-            milestoneStateService.disputeRaised(submission.getDispute().getMilestone().getId());
-            jobStateService.raiseDispute(submission.getDispute().getMilestone().getJob().getId());
+            milestoneStateService.moveMilestoneIntoDispute(submission.getDispute().getMilestone().getId());
+            jobStateService.moveJobintoDispute(submission.getDispute().getMilestone().getId(),  submission.getDispute().getMilestone().getId());
 
         } else {
             throw new AccessDeniedException("You are not authorized to create a dispute for this milestone");
