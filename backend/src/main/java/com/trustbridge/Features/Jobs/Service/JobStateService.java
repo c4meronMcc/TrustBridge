@@ -235,7 +235,7 @@ public class JobStateService {
      * @throws IllegalStateException if the state transition is not accepted by the state machine
      */
     public void raiseDispute(UUID jobId) {
-        fireEvent(jobId, jobEvent.RAISE_DISPUTE);
+        fireEvent(jobId, jobEvent.RAISE_DISPUTE, Map.of("isJobDisputed", true));
     }
 
     /**
