@@ -53,8 +53,10 @@ public class DisputeService {
 
             disputeStateService.moveDisputeIntoSubmission(submission.getDispute().getId());
             milestoneStateService.moveMilestoneIntoDispute(submission.getDispute().getMilestone().getId());
-            jobStateService.moveJobintoDispute(submission.getDispute().getMilestone().getId(),  submission.getDispute().getMilestone().getId());
-
+            jobStateService.moveJobintoDispute(
+                    submission.getDispute().getMilestone().getJob().getId(),
+                    submission.getDispute().getMilestone().getId()
+            );
         } else {
             throw new AccessDeniedException("You are not authorized to create a dispute for this milestone");
         }

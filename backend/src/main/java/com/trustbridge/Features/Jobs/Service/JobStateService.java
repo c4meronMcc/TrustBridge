@@ -47,14 +47,11 @@ public class JobStateService {
                 .orElseThrow(() -> new RuntimeException("milestone not found!"));
 
         if (milestone.getJob().getId().equals(jobId) && milestone.getStatus().equals(MilestoneStatus.DISPUTED_NEGOTIATION)) {
-            try {
-                this.raiseDispute(jobId);
-                log.info("Dispute  {} moved into Dispute State", jobId);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            this.raiseDispute(jobId);
+            log.info("Job {} moved into DISPUTE state", jobId);
+        } else {
+            throw new IllegalStateException("Milestone " + milestoneId + " is not in a disputable state for job " + jobId);
         }
-
     }
 
     /**

@@ -4,6 +4,7 @@ import com.trustbridge.Domain.Entities.Dispute;
 import com.trustbridge.Domain.Entities.Jobs;
 import com.trustbridge.Domain.Entities.Milestones;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
+import com.trustbridge.Domain.Enums.UserRole;
 import com.trustbridge.Domain.Repositories.DisputeRepository;
 import com.trustbridge.Domain.Repositories.JobRepository;
 import com.trustbridge.Domain.Repositories.MilestoneRepository;
@@ -16,6 +17,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
@@ -119,12 +121,8 @@ public class MilestoneStateService {
         Dispute dispute = disputeRepository.findByMilestoneId(milestoneId)
                 .orElseThrow(() -> new RuntimeException("Dispute not found!"));
 
-        try {
-            this.disputeRaised(milestoneId);
-            log.info("Milestone  {} moved into DISPUTE_NEGOTIATION state", dispute.getMilestone().getId());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.disputeRaised(milestoneId, "CLIENT");
+        log.info("Milestone {} moved into DISPUTE state", milestoneId);
     }
 
     /**
@@ -143,7 +141,12 @@ public class MilestoneStateService {
 
         extraHeaders.forEach(builder::setHeader);
 
-        sm.sendEvent(Mono.just(builder.build())).blockLast();
+        var result = sm.sendEvent(Mono.just(builder.build())).blockLast();
+
+        boolean accepted = result != null && result.getResultType() == StateMachineEventResult.ResultType.ACCEPTED;
+        if (!accepted) {
+            throw new IllegalStateException("Guard blocked the transition for event: " + event);
+        }
     }
 
     /**
@@ -223,8 +226,8 @@ public class MilestoneStateService {
      *
      * @param milestoneId the unique identifier of the milestone for which the dispute is raised
      */
-    public void disputeRaised(UUID milestoneId) {
-        fireEvent(milestoneId, milestoneEvent.RAISE_DISPUTE, Map.of());
+    public void disputeRaised(UUID milestoneId, String userRole) {
+        fireEvent(milestoneId, milestoneEvent.RAISE_DISPUTE, Map.of("userRole", userRole));
     }
 
     /**
