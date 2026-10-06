@@ -6,6 +6,9 @@ import com.trustbridge.Domain.Repositories.*;
 import com.trustbridge.Features.Disputes.Dto.DisputeCreationDto;
 import com.trustbridge.Features.Disputes.Dto.DisputeSubmissionFilesDto;
 import com.trustbridge.Features.Jobs.Service.FileStorageService;
+import com.trustbridge.Features.Jobs.Service.JobService;
+import com.trustbridge.Features.Jobs.Service.JobStateService;
+import com.trustbridge.Features.Jobs.Service.MilestoneStateService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -22,6 +25,8 @@ public class DisputeService {
 
     private final DisputeRepository disputeRepository;
     private final DisputeStateService disputeStateService;
+    private final MilestoneStateService milestoneStateService;
+    private final JobStateService jobStateService;
     private final UserRepository userRepository;
     private final MilestoneRepository milestoneRepository;
     private final DisputeEvidenceSubmissionRepository disputeEvidenceSubmissionRepository;
@@ -45,7 +50,11 @@ public class DisputeService {
             createNewDispute(dto);
             DisputeEvidenceSubmission submission = addSubmissionToDispute(dto);
             addDisputeEvidenceFiles(dto, submission, files);
+
             disputeStateService.moveDisputeIntoSubmission(submission.getDispute().getId());
+            milestoneStateService.disputeRaised(submission.getDispute().getMilestone().getId());
+            jobStateService.raiseDispute(submission.getDispute().getMilestone().getJob().getId());
+
         } else {
             throw new AccessDeniedException("You are not authorized to create a dispute for this milestone");
         }
