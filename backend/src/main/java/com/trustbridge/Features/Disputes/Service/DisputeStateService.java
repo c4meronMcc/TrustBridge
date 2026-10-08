@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.StateMachineEventResult;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
@@ -70,12 +71,8 @@ public class DisputeStateService {
         Dispute dispute = disputeRepository.findById(disputeId)
                 .orElseThrow(() -> new RuntimeException("Dispute not found!"));
 
-        try {
-            this.disputeEvidenceSubmitted(disputeId);
-            log.info("Dispute {} moved into SUBMITTED_EVIDENCE state", dispute.getId());
-        } catch (Exception e) {
-            log.error("Error moving dispute into SUBMITTED_EVIDENCE state: {}", e.getMessage());
-        }
+        this.disputeEvidenceSubmitted(disputeId);
+        log.info("Dispute {} moved into SUBMITTED_EVIDENCE state", dispute.getId());
     }
 
     /**
@@ -96,7 +93,12 @@ public class DisputeStateService {
                 .setHeader("disputeId", disputeId)
                 .build();
 
-        sm.sendEvent(Mono.just(message)).subscribe();
+        var result = sm.sendEvent(Mono.just(message)).blockLast();
+
+        boolean accepted = result != null && result.getResultType() == StateMachineEventResult.ResultType.ACCEPTED;
+        if (!accepted) {
+            throw new IllegalStateException("Guard blocked the transition for event: " + event);
+        }
     }
 
     /**
