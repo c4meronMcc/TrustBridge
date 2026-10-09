@@ -36,14 +36,14 @@ public class DisputeService {
     @Transactional
     public void processClientDispute(DisputeCreationDto dto, String authenicatedEmail, List<MultipartFile> files) throws IOException {
 
-        Boolean isDisputeActive = disputeRepository.findByMilestoneId(UUID.fromString(dto.milestoneId()))
+        Boolean isDisputeActive = disputeRepository.findByMilestoneId(UUID.fromString(String.valueOf(dto.milestoneId())))
                 .isPresent();
 
         if (isDisputeActive) {
             throw new AccessDeniedException("Dispute already exists for this milestone");
         }
 
-        Milestones milestone = milestoneRepository.findById(UUID.fromString(dto.milestoneId()))
+        Milestones milestone = milestoneRepository.findById(dto.milestoneId())
                 .orElseThrow(() -> new AccessDeniedException("Milestone not found"));
 
         if (milestone.getJob().getClient().getEmail().equals(authenicatedEmail) && milestone.getStatus() == MilestoneStatus.SUBMITTED) {
@@ -66,7 +66,7 @@ public class DisputeService {
     @Transactional
     public void createNewDispute(DisputeCreationDto dto) {
 
-        Milestones milestone = milestoneRepository.findById(UUID.fromString(dto.milestoneId()))
+        Milestones milestone = milestoneRepository.findById(dto.milestoneId())
                 .orElseThrow(() -> new RuntimeException("Milestone not found"));
 
         Dispute newDispute = Dispute.builder()
@@ -81,7 +81,7 @@ public class DisputeService {
     @Transactional
     public DisputeEvidenceSubmission addSubmissionToDispute(DisputeCreationDto dto) {
 
-        Dispute dispute = disputeRepository.findByMilestoneId(UUID.fromString(dto.milestoneId()))
+        Dispute dispute = disputeRepository.findByMilestoneId(dto.milestoneId())
                 .orElseThrow(() -> new RuntimeException("Dispute not found"));
 
         DisputeEvidenceSubmission submission = DisputeEvidenceSubmission.builder()
@@ -97,7 +97,7 @@ public class DisputeService {
     @Transactional
     public void addDisputeEvidenceFiles(DisputeCreationDto dto, DisputeEvidenceSubmission submission, List<MultipartFile> files) throws IOException {
 
-        Dispute dispute = disputeRepository.findByMilestoneId(UUID.fromString(dto.milestoneId()))
+        Dispute dispute = disputeRepository.findByMilestoneId(dto.milestoneId())
                 .orElseThrow(() -> new RuntimeException("Dispute not found"));
 
         if (files != null && !files.isEmpty()) {

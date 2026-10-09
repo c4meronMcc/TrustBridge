@@ -16,7 +16,7 @@ public class DisputeEvidenceFiles extends BaseEntity {
     @JoinColumn(name = "submission_id", nullable = false)
     private DisputeEvidenceSubmission submission;
 
-    @Column(name = "file_name", length = 255)
+    @Column(name = "original_filename", length = 255)
     private String fileName;
 
     @Column(name = "stored_path", length = 255)
