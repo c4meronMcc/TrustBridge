@@ -102,7 +102,7 @@ public class DisputeService {
 
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
-                if (!file.isEmpty()) {
+                if (!file.isEmpty()) { // could potentially fail if file is half full
                     String storedPath = fileStorageService.storeFile(file);
 
                     DisputeEvidenceFiles submissionFile =DisputeEvidenceFiles.builder()
