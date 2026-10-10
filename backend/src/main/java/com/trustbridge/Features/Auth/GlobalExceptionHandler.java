@@ -5,6 +5,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.rmi.AccessException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,5 +41,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<String> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(401).body("Invalid email or password");
+    }
+
+    @ExceptionHandler(AccessException.class)
+    public ResponseEntity<Map<String, String>> handleAccessException(AccessException ex) {
+        return ResponseEntity.status(403).body(new HashMap<>());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalStateException(IllegalStateException ex) {
+        return ResponseEntity.status(409).body(new HashMap<>());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return ResponseEntity.status(400).body(new HashMap<>());
     }
 }
