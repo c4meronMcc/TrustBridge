@@ -89,6 +89,6 @@ public class FileStorageService {
         if (dotIndex > 0 && dotIndex < name.length() - 1) {
             return name.substring(dotIndex + 1);
         }
-        return null;
+        throw new IllegalArgumentException("Invalid file name format");
     }
 }
