@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,27 +25,25 @@ public class FileStorageService {
 
         String extension = getFileExtension(file.getOriginalFilename());
 
-
-
         if (!checkFileTypes(extension, file.getInputStream().readNBytes(512))) throw new IllegalArgumentException("Invalid file type");
 
         log.info("File type: " + extension);
 
-        try {
+        try (InputStream inputStream = file.getInputStream()) {
             Path pathDirectory = Paths.get(STORAGE_DIRECTORY);
             if (!pathDirectory.toFile().exists()) {
                 Files.createDirectories(pathDirectory);
             }
 
-            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            String fileName = UUID.randomUUID() + "." + extension ;
             Path filePath = pathDirectory.resolve(fileName);
 
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
             return filePath.toString();
 
         } catch (IOException e) {
-            log.error("Error creating directory: {}", e.getMessage());
-            throw new IOException("Failed to create directory: " + e.getMessage());
+            log.error("Error creating directory: ", e);
+            throw new IOException("Failed to create directory: " + e);
         }
     }
 
