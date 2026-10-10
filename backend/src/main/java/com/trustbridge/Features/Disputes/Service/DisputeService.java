@@ -33,7 +33,7 @@ public class DisputeService {
     private final DisputeEvidenceFilesRepository disputeEvidenceFilesRepository;
     private final FileStorageService fileStorageService;
 
-    @Transactional
+    @Transactional(rollbackOn = Exception.class)
     public void processClientDispute(DisputeCreationDto dto, String authenicatedEmail, List<MultipartFile> files) throws IOException {
 
         Boolean isDisputeActive = disputeRepository.findByMilestoneId(UUID.fromString(String.valueOf(dto.milestoneId())))

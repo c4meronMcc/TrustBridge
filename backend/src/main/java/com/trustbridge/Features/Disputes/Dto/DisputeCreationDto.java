@@ -12,5 +12,5 @@ import java.util.UUID;
 public record DisputeCreationDto(
         @NotNull UUID milestoneId,
         @NotNull @Positive BigDecimal clientProposedAmount,
-        @NotBlank @Size(max = 2000) String reason
+        @NotNull @Size(max = 2000) String reason
 ) { }
