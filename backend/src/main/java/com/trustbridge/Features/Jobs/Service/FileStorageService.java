@@ -12,7 +12,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,7 +24,7 @@ public class FileStorageService {
 
         String extension = getFileExtension(file.getOriginalFilename());
 
-        if (!checkFileTypes(extension)) throw new IllegalArgumentException("Invalid file type");
+        if (!checkFileTypes(extension, file.getBytes())) throw new IllegalArgumentException("Invalid file type");
 
         log.info("File type: " + extension);
 
@@ -47,22 +46,31 @@ public class FileStorageService {
         }
     }
 
-    private boolean checkFileTypes(String extension) {
+    private boolean startsWith(byte[] header, int... signature) {
+        if (header.length < signature.length) return false;
+        for (int i = 0; i < signature.length; i++) {
+            if ((header[i] & 0xFF) != signature[i]) return false;
+        }
+        return true;
+    }
 
+    private boolean checkFileTypes(String extension, byte[] header) {
         switch (extension.toLowerCase()) {
             case "pdf":
-                return true;
-            case "doc":
-                return true;
-            case "docx":
-                return true;
-            case "txt":
-                return true;
-            case "jpg":
-                return true;
-            case "jpeg":
-                return true;
+                return startsWith(header, 0x25, 0x50, 0x44, 0x46);
             case "png":
+                return startsWith(header, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A);
+            case "jpg":
+            case "jpeg":
+                return startsWith(header, 0xFF, 0xD8, 0xFF);
+            case "doc":
+                return startsWith(header, 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1);
+            case "docx":
+                return startsWith(header, 0x50, 0x4B, 0x03, 0x04);
+            case "txt":
+                for (byte b : header) {
+                    if (b == 0) return false;
+                }
                 return true;
             default:
                 throw new IllegalArgumentException("Invalid file type");
