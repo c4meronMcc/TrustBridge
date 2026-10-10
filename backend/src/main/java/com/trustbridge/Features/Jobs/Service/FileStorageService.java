@@ -26,7 +26,7 @@ public class FileStorageService {
 
 
 
-        if (!checkFileTypes(extension, file.getBytes())) throw new IllegalArgumentException("Invalid file type");
+        if (!checkFileTypes(extension, file.getInputStream().readNBytes(512))) throw new IllegalArgumentException("Invalid file type");
 
         log.info("File type: " + extension);
 
