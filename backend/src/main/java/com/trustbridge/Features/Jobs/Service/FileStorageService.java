@@ -20,9 +20,11 @@ public class FileStorageService {
     private final String STORAGE_DIRECTORY = "uploads/milestones/";
 
     public String storeFile(MultipartFile file) throws IOException {
-        if (file.isEmpty()) return null;
+        if (file.isEmpty()) throw new IllegalArgumentException("File is empty");
 
         String extension = getFileExtension(file.getOriginalFilename());
+
+
 
         if (!checkFileTypes(extension, file.getBytes())) throw new IllegalArgumentException("Invalid file type");
 
