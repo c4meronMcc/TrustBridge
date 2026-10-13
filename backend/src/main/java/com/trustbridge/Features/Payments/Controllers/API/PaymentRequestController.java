@@ -30,20 +30,6 @@ public class PaymentRequestController {
         PaymentRequest paymentRequest = paymentRequestRepository.findById(paymentRequestId)
                 .orElseThrow(() -> new RuntimeException("Payment not found!"));
 
-        /*
-        String jobTitle,
-        String freelancerName,
-        String clientName,
-        String clientEmail,
-        String currency,
-        String milestoneTitle,
-        String milestoneAmount,
-        String clientSecret,
-        String PaymentRequestId,
-        String provider
-        */
-
-
         return ResponseEntity.ok(new MilestonePaymentDto(
                 paymentRequest.getMilestone().getJob().getTitle(),
                 paymentRequest.getMilestone().getJob().getFreelancer().getFirstName() + " " + paymentRequest.getMilestone().getJob().getFreelancer().getLastName(),

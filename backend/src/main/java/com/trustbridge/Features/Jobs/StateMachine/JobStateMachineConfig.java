@@ -10,6 +10,7 @@ import com.trustbridge.Domain.Repositories.MilestoneRepository;
 import com.trustbridge.Features.Jobs.Events.UnlockNextMilestoneEvent;
 import com.trustbridge.Features.Jobs.Service.MilestoneStateService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Configuration
 @EnableStateMachineFactory(name = "JobStateMachineFactory")
 @RequiredArgsConstructor
@@ -113,6 +115,11 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
                 .and()
                 .withExternal()
                 .source(jobStatus.SUBMITTED).target(jobStatus.DISPUTED)
+                .event(jobEvent.RAISE_DISPUTE)
+                .guard(jobDisputedGuard())
+                .and()
+                .withExternal()
+                .source(jobStatus.IN_PROGRESS).target(jobStatus.DISPUTED) // <--- Add this block!
                 .event(jobEvent.RAISE_DISPUTE)
                 .guard(jobDisputedGuard())
                 .and()
@@ -285,8 +292,14 @@ public class JobStateMachineConfig extends EnumStateMachineConfigurerAdapter<job
     @Bean
     public Guard<jobStatus, jobEvent> jobDisputedGuard() {
         return context -> {
+            log.info("====== GUARD EVALUATING ======");
+            log.info("HEADERS: " + context.getMessageHeaders());
+
             Boolean isJobDisputed = (Boolean) context.getMessageHeaders().get("isJobDisputed");
-            return isJobDisputed != null && isJobDisputed;
+            boolean pass = isJobDisputed != null && isJobDisputed;
+
+            log.info("GUARD RESULT: " + pass);
+            return pass;
         };
     }
 

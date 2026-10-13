@@ -29,13 +29,11 @@ public class DisputeApiController {
     @PostMapping(value = "/open-dispute", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> openDispute(
             @RequestPart("dto") @Valid DisputeCreationDto dto,
-            Principal principal,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @RequestHeader("X-Review-Token") String reviewToken
     ) throws IOException {
 
-        String authenticatedEmail = principal.getName();
-
-        disputeService.processClientDispute(dto, authenticatedEmail, files);
+        disputeService.processClientDispute(dto, reviewToken ,files);
 
         return ResponseEntity.ok("Dispute Successfully Opened");
     }

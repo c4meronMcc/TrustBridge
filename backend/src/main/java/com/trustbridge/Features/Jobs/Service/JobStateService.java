@@ -102,15 +102,21 @@ public class JobStateService {
                 .setHeader("jobId", jobId);
 
         if (additionalHeaders != null && !additionalHeaders.isEmpty()) {
-            builder.copyHeaders(additionalHeaders);
+            additionalHeaders.forEach((key, value) -> builder.setHeader(key, value));
         }
 
         var result = sm.sendEvent(Mono.just(builder.build())).blockLast();
 
+        if (result != null) {
+            log.info("====== STATE MACHINE RESULT ======");
+            log.info("Result Type: " + result.getResultType());
+        }
+
         boolean accepted = result != null && result.getResultType() == StateMachineEventResult.ResultType.ACCEPTED;
 
         if (!accepted) {
-            throw new IllegalStateException("Guard blocked the transition for event: " + event);
+            String reason = result != null ? result.getResultType().toString() : "NULL_RESULT";
+            throw new IllegalStateException("Transition failed with reason: " + reason + " for event: " + event);
         }
     }
 

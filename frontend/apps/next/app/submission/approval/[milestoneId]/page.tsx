@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, use } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import {redirect, useRouter, useSearchParams} from "next/navigation";
 import {
     ArrowLeft,
     ShieldCheck,
@@ -22,6 +22,7 @@ import {
     Landmark,
     ArrowRight
 } from "lucide-react";
+import {getAssetToken} from "next/dist/shared/lib/deployment-id";
 
 // ---------------------------------------------------------------------------
 // TYPES (Mapped from Spring Boot DTOs)
@@ -142,31 +143,10 @@ export default function ClientReviewPage({
 
     const [changesFeedback, setChangesFeedback] = useState("");
 
-    const handleRequestChanges = async () => {
-        if (isApproving || isRejecting) return;
-        setIsRejecting(true);
-        try {
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/milestone/request-changes/${milestoneId}`,
-                {
-                    method: "POST",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json",
-                    "X-Review-Token": reviewToken ?? ""},
-                    body: JSON.stringify({ feedback: changesFeedback}),
-                }
-            );
-            if (!response.ok) throw new Error("Request changes failed");
-            setActionSuccess("rejected");
-        } catch (err: any) {
-            setError(err.message || "Failed to request changes.");
-            setIsRejecting(false);
-        }
+    const handleDispute = (): void => {
+        sessionStorage.setItem('reviewToken', reviewToken ?? '');
+        router.push(`/dashboard/client/jobs/submission/dispute/${milestoneId}`);
     };
-
-    // ---------------------------------------------------------------------------
-    // HELPERS
-    // ---------------------------------------------------------------------------
 
     const formatCurrency = (amount: number) =>
         `£${(amount || 0).toLocaleString("en-GB", {
@@ -233,6 +213,7 @@ export default function ClientReviewPage({
             console.error("File access error:", err);
             alert(err.message);
         }
+
     };
 
     // ---------------------------------------------------------------------------
@@ -481,12 +462,12 @@ export default function ClientReviewPage({
                                 </button>
 
                                 <button
-                                    onClick={handleRequestChanges}
+                                    onClick={handleDispute}
                                     disabled={isApproving || isRejecting}
                                     className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 py-3.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {isRejecting ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />}
-                                    Request Changes
+                                    Dispute
                                 </button>
                             </div>
 

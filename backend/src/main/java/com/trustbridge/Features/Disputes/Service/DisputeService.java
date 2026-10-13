@@ -32,7 +32,7 @@ public class DisputeService {
     private final FileStorageService fileStorageService;
 
     @Transactional(rollbackOn = Exception.class)
-    public void processClientDispute(DisputeCreationDto dto, String authenicatedEmail, List<MultipartFile> files) throws IOException {
+    public void processClientDispute(DisputeCreationDto dto, String reviewToken ,List<MultipartFile> files) throws IOException {
 
         Boolean isDisputeActive = disputeRepository.findByMilestoneId(UUID.fromString(String.valueOf(dto.milestoneId())))
                 .isPresent();
@@ -41,10 +41,12 @@ public class DisputeService {
             throw new AccessDeniedException("Dispute already exists for this milestone");
         }
 
-        Milestones milestone = milestoneRepository.findById(dto.milestoneId())
-                .orElseThrow(() -> new AccessDeniedException("Milestone not found"));
+//        reviewTokenService.validate(reviewToken, dto.milestoneId());
 
-        if (milestone.getJob().getClient().getEmail().equals(authenicatedEmail) && milestone.getStatus() == MilestoneStatus.SUBMITTED) {
+        Milestones milestone = milestoneRepository.findById(dto.milestoneId())
+                .orElseThrow(() -> new AccessDeniedException("Not authorized"));
+
+        if (milestone.getStatus() == MilestoneStatus.SUBMITTED) {
             createNewDispute(dto);
             DisputeEvidenceSubmission submission = addSubmissionToDispute(dto);
             addDisputeEvidenceFiles(dto, submission, files);
