@@ -4,11 +4,15 @@ import com.trustbridge.Domain.Entities.*;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Repositories.*;
 import com.trustbridge.Features.Disputes.Dto.DisputeCreationDto;
+import com.trustbridge.Features.Disputes.Dto.DisputeCreationEmailSenderDto;
 import com.trustbridge.Features.Jobs.Service.FileStorageService;
+import com.trustbridge.Features.Jobs.Service.JobService;
 import com.trustbridge.Features.Jobs.Service.JobStateService;
 import com.trustbridge.Features.Jobs.Service.MilestoneStateService;
+import com.trustbridge.Features.Notifications.Listeners.DisputeEmailListener;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,6 +34,7 @@ public class DisputeService {
     private final DisputeEvidenceSubmissionRepository disputeEvidenceSubmissionRepository;
     private final DisputeEvidenceFilesRepository disputeEvidenceFilesRepository;
     private final FileStorageService fileStorageService;
+    private final DisputeEmailListener disputeEmailListener;
 
     @Transactional(rollbackOn = Exception.class)
     public void processClientDispute(DisputeCreationDto dto, String reviewToken ,List<MultipartFile> files) throws IOException {
@@ -57,10 +62,40 @@ public class DisputeService {
                     submission.getDispute().getMilestone().getJob().getId(),
                     submission.getDispute().getMilestone().getId()
             );
+
+            Users freelancer = userRepository.findByEmail(submission.getDispute().getMilestone().getJob().getFreelancer().getEmail())
+                    .orElseThrow(() -> new RuntimeException("Freelancer not found"));
+
+            DisputeCreationEmailSenderDto emailSenderDto = new DisputeCreationEmailSenderDto(
+                    freelancer.getFirstName(),
+                    freelancer.getEmail(),
+                    milestone.getId(),
+                    milestone.getTitle(),
+                    milestone.getJob().getDescription(),
+                    milestone.getJob().getCurrency(),
+                    milestone.getAmount(),
+                    dto.clientProposedAmount(),
+                    generateInviteToken()
+            );
+
+            String inviteToken = generateInviteToken();
+
+            disputeEmailListener.clientOpendedDispute(emailSenderDto, inviteToken, submission.getDispute().getId().toString(), freelancer);
+
+
         } else {
             throw new AccessDeniedException("You are not authorized to create a dispute for this milestone");
         }
 
+    }
+
+    /**
+     * Generates a random alphanumeric token to be used as an invite token.
+     *
+     * @return A 64-character long random alphanumeric string.
+     */
+    public String generateInviteToken() {
+        return RandomStringUtils.randomAlphanumeric(64);
     }
 
     @Transactional

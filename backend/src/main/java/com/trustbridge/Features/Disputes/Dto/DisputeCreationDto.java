@@ -9,8 +9,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-public record DisputeCreationDto(
+public record DisputeCreationDto (
         @NotNull UUID milestoneId,
         @NotNull @Positive BigDecimal clientProposedAmount,
         @NotBlank @Size(max = 2000) String reason
-) { }
+) {}
