@@ -17,7 +17,7 @@ public class DisputeEmailListener {
 
     private final EmailSenderService emailSenderService;
     private final TemplateEngineService templateEngineService;
-
+    
     public void clientOpendedDispute(DisputeCreationEmailSenderDto dto, String inviteToken, String disputeId, Users freelancer) {
 
         String inviteLink = "http://localhost:3000/dispute/" + inviteToken;

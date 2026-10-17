@@ -18,4 +18,7 @@ public class DisputeEvidenceSubmission extends BaseEntity {
 
     @Column(name = "reason", nullable = false)
     private String reason;
+
+    @Column(name = "reason", nullable = false)
+    private String inviteToken;
 }

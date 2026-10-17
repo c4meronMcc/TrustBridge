@@ -1,6 +1,7 @@
 package com.trustbridge.Features.Disputes.Controllers;
 
 import com.trustbridge.Features.Disputes.Dto.DisputeCreationDto;
+import com.trustbridge.Features.Disputes.Dto.DisputeNegotiationStageFreelancerDto;
 import com.trustbridge.Features.Disputes.Service.DisputeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,9 +34,19 @@ public class DisputeApiController {
             @RequestHeader("X-Review-Token") String reviewToken
     ) throws IOException {
 
-        disputeService.processClientDispute(dto, reviewToken ,files);
+        disputeService.processClientDispute(dto);
 
         return ResponseEntity.ok("Dispute Successfully Opened");
     }
 
+
+    /**
+     *
+     */
+    public ResponseEntity<DisputeNegotiationStageFreelancerDto> getDisputeSubmissionForFreelancer(String inviteToken, Principal principal) {
+
+        DisputeNegotiationStageFreelancerDto dto = disputeService.getDisputeSubmissionForFreelancer(inviteToken);
+
+        return ResponseEntity.ok(dto);
+    }
 }

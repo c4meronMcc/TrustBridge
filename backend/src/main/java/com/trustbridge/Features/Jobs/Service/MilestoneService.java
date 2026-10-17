@@ -74,6 +74,19 @@ public class MilestoneService {
         log.info("Saved {} milestones for jobId: {}", milestones.size(), jobs.getId());
     }
 
+    /**
+     * Handles the submission of a milestone by a freelancer. This includes saving the submission
+     * details, associated deliverables, and files. The method ensures the milestone is currently
+     * in progress before allowing submission.
+     *
+     * @param milestoneId      The unique identifier of the milestone being submitted.
+     * @param deliverableLink  A link to the deliverable(s) associated with the milestone.
+     * @param notes            Additional notes provided by the freelancer for the milestone submission.
+     * @param scopeItems       A JSON-formatted string that describes the specific scope items delivered.
+     * @param files            A list of files attached to the milestone submission.
+     * @throws IOException     If an error occurs while storing or processing the attached files.
+     * @throws IllegalStateException If the milestone is not in the required IN_PROGRESS state.
+     */
     public void freelancerSubmittedMilestone(UUID milestoneId, String deliverableLink, String notes, String scopeItems, List<MultipartFile> files) throws IOException {
 
         Milestones milestone = milestoneRepository.findById(milestoneId).orElseThrow();
@@ -118,6 +131,14 @@ public class MilestoneService {
 
     }
 
+    /**
+     * Retrieves the latest submission associated with a given milestone and prepares it for review.
+     *
+     * @param milestoneId the unique identifier of the milestone for which the submission is being retrieved
+     * @return a {@code MilestoneSubmissionReviewDto} containing the details of the most recent submission,
+     *         including scope items, associated files, and metadata related to the submission and milestone
+     * @throws RuntimeException if no submission is found for the given milestone
+     */
     public MilestoneSubmissionReviewDto getSubmissionForReview(UUID milestoneId) {
         MilestoneSubmissions submission = milestoneSubmissionRepository.findTopByMilestoneIdOrderByCreatedAtDesc(milestoneId)
                 .orElseThrow(() -> new RuntimeException("Submission not found for this milestone"));
@@ -159,7 +180,15 @@ public class MilestoneService {
         );
     }
 
-
+    /**
+     * Approves a milestone if it meets the required conditions by verifying the
+     * provided token, checking the milestone status, and processing state transitions.
+     *
+     * @param milestoneId the unique identifier of the milestone to be approved
+     * @param providedToken the token supplied to validate the approval process
+     * @throws IllegalStateException if the milestone is not in an appropriate state for approval
+     * @throws RuntimeException if a submission for the milestone cannot be found
+     */
     @Transactional
     public void approveMilestone(UUID milestoneId, String providedToken) {
         Milestones milestones = milestoneRepository.findById(milestoneId)
