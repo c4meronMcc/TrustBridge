@@ -41,7 +41,12 @@ public class DisputeApiController {
 
 
     /**
+     * Retrieves the dispute submission details for a freelancer based on the provided invite token.
      *
+     * @param inviteToken the unique token associated with the dispute submission.
+     * @param principal the security context of the currently authenticated user.
+     * @return a ResponseEntity containing the dispute submission details, wrapped in a
+     *         DisputeNegotiationStageFreelancerDto object.
      */
     public ResponseEntity<DisputeNegotiationStageFreelancerDto> getDisputeSubmissionForFreelancer(String inviteToken, Principal principal) {
 

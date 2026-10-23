@@ -15,7 +15,7 @@ import java.util.UUID;
 public class MilestoneSubmissionFile extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "submission_id", nullable = false)
+    @JoinColumn(name = "submission_id")
     private MilestoneSubmissions submission;
 
     @Column(name="original_filename", length = 255)

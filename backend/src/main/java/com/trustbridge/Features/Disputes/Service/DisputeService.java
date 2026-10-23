@@ -211,7 +211,7 @@ public class DisputeService {
         DisputeEvidenceSubmission disputeEvidence = disputeEvidenceSubmissionRepository.findByInviteToken(inviteToken)
                 .orElseThrow(() -> new RuntimeException("Dispute Evidence not found"));
 
-        List<DisputeSubmissionFileDto> files = disputeEvidenceFilesRepository.findAllByDisputeSubmissionId(disputeEvidence.getId())
+        List<DisputeSubmissionFileDto> files = disputeEvidenceFilesRepository.findAllBySubmissionId(disputeEvidence.getId())
                 .stream()
                 .map(file -> new DisputeSubmissionFileDto(
                         file.getId(),

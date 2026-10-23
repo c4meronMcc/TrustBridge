@@ -13,7 +13,7 @@ import lombok.*;
 public class DisputeEvidenceFiles extends BaseEntity {
 
     @ManyToOne
-    @JoinColumn(name = "submission_id", nullable = false)
+    @JoinColumn(name = "submission_id")
     private DisputeEvidenceSubmission submission;
 
     @Column(name = "original_filename", length = 255)
