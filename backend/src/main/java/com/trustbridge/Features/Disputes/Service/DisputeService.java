@@ -126,9 +126,9 @@ public class DisputeService {
                 .finalSettlementCurrency(milestone.getJob().getCurrency())
                 .build();
 
-        DisputeEvidenceSubmission submission = addSubmissionToDispute(dto);
-
         disputeRepository.save(newDispute);
+
+        DisputeEvidenceSubmission submission = addSubmissionToDispute(dto);
 
         return new String[]{newDispute.getId().toString(), submission.getInviteToken()};
     }
