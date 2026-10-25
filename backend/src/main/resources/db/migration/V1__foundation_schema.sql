@@ -229,6 +229,7 @@ CREATE TABLE dispute_evidence_submissions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     dispute_id uuid NOT NULL REFERENCES disputes(id),
     reason TEXT,
+    invite_token VARCHAR(64) UNIQUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

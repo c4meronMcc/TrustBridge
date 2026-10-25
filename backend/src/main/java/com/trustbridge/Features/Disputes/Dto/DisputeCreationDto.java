@@ -14,5 +14,5 @@ public record DisputeCreationDto (
         @NotNull UUID milestoneId,
         @NotNull @Positive BigDecimal clientProposedAmount,
         @NotBlank @Size(max = 2000) String reason,
-        List<MultipartFile> files
+        @NotNull List<MultipartFile> files
 ) {}
