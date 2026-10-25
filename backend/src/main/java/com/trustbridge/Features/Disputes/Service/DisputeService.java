@@ -66,7 +66,7 @@ public class DisputeService {
 
         if (milestone.getStatus() == MilestoneStatus.SUBMITTED) {
             try {
-                String disputeId = createNewDispute(dto);
+                String[] disputeInformation = createNewDispute(dto);
                 disputeStateService.disputeEvidenceSubmitted(dto.milestoneId());
 
                 Users freelancer = userRepository.findByEmail(milestone.getJob().getFreelancer().getEmail())
@@ -80,13 +80,10 @@ public class DisputeService {
                         milestone.getJob().getDescription(),
                         milestone.getJob().getCurrency(),
                         milestone.getAmount(),
-                        dto.clientProposedAmount(),
-                        generateInviteToken()
+                        dto.clientProposedAmount()
                 );
 
-                String inviteToken = generateInviteToken();
-
-                disputeEmailListener.clientOpendedDispute(emailSenderDto, inviteToken, disputeId, freelancer);
+                disputeEmailListener.clientOpendedDispute(emailSenderDto, disputeInformation[1], disputeInformation[0], freelancer);
 
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -118,7 +115,7 @@ public class DisputeService {
      *                          does not exist.
      */
     @Transactional
-    protected String createNewDispute(DisputeCreationDto dto) {
+    protected String[] createNewDispute(DisputeCreationDto dto) {
 
         Milestones milestone = milestoneRepository.findById(dto.milestoneId())
                 .orElseThrow(() -> new RuntimeException("Milestone not found"));
@@ -129,11 +126,11 @@ public class DisputeService {
                 .finalSettlementCurrency(milestone.getJob().getCurrency())
                 .build();
 
-        addSubmissionToDispute(dto);
+        DisputeEvidenceSubmission submission = addSubmissionToDispute(dto);
 
         disputeRepository.save(newDispute);
 
-        return newDispute.getId().toString();
+        return new String[]{newDispute.getId().toString(), submission.getInviteToken()};
     }
 
     /**
@@ -157,6 +154,7 @@ public class DisputeService {
         DisputeEvidenceSubmission submission = DisputeEvidenceSubmission.builder()
                 .dispute(dispute)
                 .reason(dto.reason())
+                .inviteToken(generateInviteToken())
                 .build();
 
         disputeEvidenceSubmissionRepository.save(submission);

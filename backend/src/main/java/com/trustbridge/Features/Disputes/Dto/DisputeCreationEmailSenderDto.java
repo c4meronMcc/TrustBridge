@@ -13,6 +13,5 @@ public record DisputeCreationEmailSenderDto(
    @NotNull String description,
    @NotNull String currency,
    @NotNull BigDecimal amount,
-   @NotNull BigDecimal proposedAmount,
-   @NotNull String inviteToken
+   @NotNull BigDecimal proposedAmount
 ) {}
