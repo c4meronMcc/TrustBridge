@@ -67,7 +67,7 @@ public class DisputeService {
         if (milestone.getStatus() == MilestoneStatus.SUBMITTED) {
             try {
                 String[] disputeInformation = createNewDispute(dto);
-                disputeStateService.disputeEvidenceSubmitted(dto.milestoneId());
+                disputeStateService.disputeEvidenceSubmitted(UUID.fromString(disputeInformation[0]));
 
                 Users freelancer = userRepository.findByEmail(milestone.getJob().getFreelancer().getEmail())
                         .orElseThrow(() -> new AccessDeniedException("Not authorized"));
