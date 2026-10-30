@@ -11,8 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.security.Principal;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -32,8 +30,7 @@ public class DisputeApiController {
     public ResponseEntity<String> openDispute(
             @RequestPart("dto") @Valid DisputeCreationDto dto,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            @RequestHeader("X-Review-Token") String reviewToken
-    ) throws IOException {
+            @RequestHeader("X-Review-Token") String reviewToken) {
 
         DisputeOpenedResult result = disputeService.processClientDispute(dto, files, reviewToken);
 
@@ -42,19 +39,16 @@ public class DisputeApiController {
         return ResponseEntity.ok("Dispute Successfully Opened");
     }
 
-
     /**
      * Retrieves the dispute submission details for a freelancer based on the provided invite token.
      *
      * @param inviteToken the unique token associated with the dispute submission.
-     * @param principal the security context of the currently authenticated user.
      * @return a ResponseEntity containing the dispute submission details, wrapped in a
      *         DisputeNegotiationStageFreelancerDto object.
      */
-    public ResponseEntity<DisputeNegotiationStageFreelancerDto> getDisputeSubmissionForFreelancer(String inviteToken, Principal principal) {
+    @GetMapping("/invite/{inviteToken}")
+    public ResponseEntity<DisputeNegotiationStageFreelancerDto> getDisputeSubmissionForFreelancer(@PathVariable String inviteToken) {
 
-        DisputeNegotiationStageFreelancerDto dto = disputeService.getDisputeSubmissionForFreelancer(inviteToken);
-
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(disputeService.getDisputeSubmissionForFreelancer(inviteToken));
     }
 }

@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/webhooks/**").permitAll()
                         .requestMatchers("/api/auth/**", "/api/invite/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/disputes/open-dispute").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/disputes/invite/**").permitAll()
                         .requestMatchers("/api/files/**").authenticated()
                         .requestMatchers("/api/milestone/review/**", "/api/milestone/approve/**", "/api/milestone/request-changes/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/payment-requests/**").permitAll()
