@@ -3,39 +3,42 @@ package com.trustbridge.Features.Disputes.Service;
 import com.trustbridge.Domain.Entities.*;
 import com.trustbridge.Domain.Enums.MilestoneStatus;
 import com.trustbridge.Domain.Repositories.*;
-import com.trustbridge.Features.Disputes.Dto.DisputeCreationDto;
-import com.trustbridge.Features.Disputes.Dto.DisputeCreationEmailSenderDto;
-import com.trustbridge.Features.Disputes.Dto.DisputeNegotiationStageFreelancerDto;
-import com.trustbridge.Features.Disputes.Dto.DisputeSubmissionFileDto;
+import com.trustbridge.Features.Disputes.Dto.*;
 import com.trustbridge.Features.Jobs.Service.FileStorageService;
 import com.trustbridge.Features.Jobs.Service.JobStateService;
 import com.trustbridge.Features.Jobs.Service.MilestoneStateService;
 import com.trustbridge.Features.Notifications.Listeners.DisputeEmailListener;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.RandomStringUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DisputeService {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final DisputeRepository disputeRepository;
     private final DisputeStateService disputeStateService;
     private final MilestoneStateService milestoneStateService;
     private final JobStateService jobStateService;
-    private final UserRepository userRepository;
     private final MilestoneRepository milestoneRepository;
     private final DisputeEvidenceSubmissionRepository disputeEvidenceSubmissionRepository;
     private final DisputeEvidenceFilesRepository disputeEvidenceFilesRepository;
     private final FileStorageService fileStorageService;
     private final DisputeEmailListener  disputeEmailListener;
+    private final MilestoneSubmissionRepository milestoneSubmissionRepository;
 
     /**
      * Processes a client dispute for a specific milestone. This method verifies the conditions
@@ -52,49 +55,92 @@ public class DisputeService {
      * @throws RuntimeException if an unexpected error occurs during dispute creation or notification processing.
      */
     @Transactional
-    public void processClientDispute(DisputeCreationDto dto) {
-
-        Boolean isDisputeActive = disputeRepository.findByMilestoneId(dto.milestoneId())
-                .isPresent();
-
-        if (isDisputeActive) {
-            throw new AccessDeniedException("Dispute already exists for this milestone");
-        }
+    public DisputeOpenedResult processClientDispute(DisputeCreationDto dto, List<MultipartFile> files, String reviewToken) {
 
         Milestones milestone = milestoneRepository.findById(dto.milestoneId())
                 .orElseThrow(() -> new AccessDeniedException("Not authorized"));
 
-        if (milestone.getStatus() == MilestoneStatus.SUBMITTED) {
-            try {
-                String[] disputeInformation = createNewDispute(dto);
-                disputeStateService.disputeEvidenceSubmitted(UUID.fromString(disputeInformation[0]));
+        verifyReviewToken(milestone, reviewToken);
 
-                Users freelancer = userRepository.findByEmail(milestone.getJob().getFreelancer().getEmail())
-                        .orElseThrow(() -> new AccessDeniedException("Not authorized"));
-
-                DisputeCreationEmailSenderDto emailSenderDto = new DisputeCreationEmailSenderDto(
-                        freelancer.getFirstName(),
-                        freelancer.getEmail(),
-                        milestone.getId(),
-                        milestone.getTitle(),
-                        milestone.getJob().getDescription(),
-                        milestone.getJob().getCurrency(),
-                        milestone.getAmount(),
-                        dto.clientProposedAmount()
-                );
-
-                disputeEmailListener.clientOpendedDispute(emailSenderDto, disputeInformation[1], disputeInformation[0], freelancer);
-
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            throw new AccessDeniedException("You are not authorized to create a dispute for this milestone");
+        if (milestone.getStatus() != MilestoneStatus.SUBMITTED) {
+            throw new AccessDeniedException("Milestone is not in a valid state for dispute creation");
         }
 
+        if (disputeRepository.findByMilestoneId(dto.milestoneId()).isPresent()) {
+            throw new AccessDeniedException("Dispute already exists for this milestone");
+        }
+
+        if (dto.clientProposedAmount().compareTo(milestone.getAmount()) > 0) {
+            throw new AccessDeniedException("Client proposed amount is greater than milestone amount");
+        }
+
+        Dispute dispute = disputeRepository.save(Dispute.builder()
+                .milestone(milestone)
+                .clientProposedAmount(dto.clientProposedAmount())
+                .finalSettlementCurrency(milestone.getJob().getCurrency())
+                .build());
+
+        DisputeEvidenceSubmission submission = disputeEvidenceSubmissionRepository.save(
+                DisputeEvidenceSubmission.builder()
+                .dispute(dispute)
+                .reason(dto.reason())
+                .inviteToken(generateInviteToken())
+                .build());
+
+        storeEvidenceFiles(submission, files);
+
+        milestoneStateService.moveMilestoneIntoDispute(milestone.getId());
+        jobStateService.moveJobintoDispute(milestone.getJob().getId(), milestone.getId());
+
+        disputeStateService.disputeEvidenceSubmitted(dispute.getId());
+
+        Users freelancer = milestone.getJob().getFreelancer();
+
+        DisputeCreationEmailSenderDto emailDto = new DisputeCreationEmailSenderDto(
+                freelancer.getFirstName(),
+                freelancer.getEmail(),
+                milestone.getId(),
+                milestone.getTitle(),
+                milestone.getJob().getDescription(),
+                milestone.getJob().getCurrency(),
+                milestone.getAmount(),
+                dto.clientProposedAmount()
+        );
+
+
+        return new DisputeOpenedResult(dispute.getId(), submission.getInviteToken(), emailDto, freelancer);
     }
 
+    /**
+     * Emails the freelancer their dispute link. NOT transactional and never throws:
+     * a failed email must not undo (or hide) a dispute that was already opened.
+     */
+    public void sendDisputeOpenedEmail(DisputeOpenedResult result) {
+        try {
+            disputeEmailListener.clientOpendedDispute(
+                    result.emailDto(),
+                    result.inviteToken(),
+                    result.disputeId().toString(),
+                    result.freelancer());
+        } catch (Exception e) {
+            log.error("Dispute {} was opened but the freelancer email failed: {}", result.disputeId(), e.getMessage());
+        }
+    }
 
+    private void verifyReviewToken(Milestones milestone, String providedToken) {
+        MilestoneSubmissions latest = milestoneSubmissionRepository.findTopByMilestoneIdOrderByCreatedAtDesc(milestone.getId())
+                .orElseThrow(() -> new AccessDeniedException("Not Authorized"));
+
+        String stored = latest.getReviewToken();
+
+        boolean matches = stored != null && providedToken != null
+                && MessageDigest.isEqual(
+                        stored.getBytes(StandardCharsets.UTF_8),
+                        providedToken.getBytes(StandardCharsets.UTF_8));
+        if (!matches) {
+            throw new AccessDeniedException("Review token does not match");
+        }
+    }
 
     /**
      * Generates a random alphanumeric token to be used as an invite token.
@@ -102,107 +148,36 @@ public class DisputeService {
      * @return A 64-character long random alphanumeric string.
      */
     public String generateInviteToken() {
-        return RandomStringUtils.randomAlphanumeric(64);
+        byte[] bytes = new byte[48];
+        SECURE_RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
-    /**
-     * Creates a new dispute based on the provided dispute creation details.
-     *
-     * @param dto a {@link DisputeCreationDto} object containing the necessary details
-     *            to create a new dispute such as milestone ID, client proposed amount, etc.
-     * @return a {@link String} representing the unique ID of the newly created dispute.
-     * @throws RuntimeException if the milestone associated with the provided ID
-     *                          does not exist.
-     */
-    @Transactional
-    protected String[] createNewDispute(DisputeCreationDto dto) {
+    private void storeEvidenceFiles(DisputeEvidenceSubmission submission, List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            return;
+        }
 
-        Milestones milestone = milestoneRepository.findById(dto.milestoneId())
-                .orElseThrow(() -> new RuntimeException("Milestone not found"));
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) continue;
 
-        Dispute newDispute = Dispute.builder()
-                .milestone(milestone)
-                .clientProposedAmount(dto.clientProposedAmount())
-                .finalSettlementCurrency(milestone.getJob().getCurrency())
-                .build();
-
-        disputeRepository.save(newDispute);
-
-        DisputeEvidenceSubmission submission = addSubmissionToDispute(dto);
-
-        return new String[]{newDispute.getId().toString(), submission.getInviteToken()};
-    }
-
-    /**
-     * Adds a new evidence submission to an existing dispute.
-     * This method locates a dispute based on the milestone ID provided in the DTO,
-     * creates a DisputeEvidenceSubmission entity associated with that dispute,
-     * and saves it in the repository. It also processes and associates evidence files
-     * to the submission.
-     *
-     * @param dto The data transfer object containing the dispute creation details,
-     *            including milestone ID, reason, and evidence files.
-     * @return The newly created DisputeEvidenceSubmission object.
-     * @throws RuntimeException if no dispute is found for the given milestone ID.
-     */
-    @Transactional
-    protected DisputeEvidenceSubmission addSubmissionToDispute(DisputeCreationDto dto) {
-
-        Dispute dispute = disputeRepository.findByMilestoneId(dto.milestoneId())
-                .orElseThrow(() -> new RuntimeException("Dispute not found"));
-
-        DisputeEvidenceSubmission submission = DisputeEvidenceSubmission.builder()
-                .dispute(dispute)
-                .reason(dto.reason())
-                .inviteToken(generateInviteToken())
-                .build();
-
-        disputeEvidenceSubmissionRepository.save(submission);
-
-        addDisputeEvidenceFiles(submission, dto.files());
-
-        return submission;
-    }
-
-    /**
-     * Adds evidence files to the specified dispute evidence submission.
-     *
-     * This method finds the dispute associated with the provided submission,
-     * stores the provided evidence files, and then saves the stored file details
-     * in the dispute evidence files repository.
-     *
-     * @param submission The dispute evidence submission to which the files are related.
-     * @param files List of files to be added as evidence to the dispute. Each file must
-     *              be non-empty for it to be processed and stored.
-     */
-    @Transactional
-    protected void addDisputeEvidenceFiles(DisputeEvidenceSubmission submission, List<MultipartFile> files)  {
-
-        Dispute dispute = disputeRepository.findByMilestoneId(submission.getDispute().getMilestone().getId())
-                .orElseThrow(() -> new RuntimeException("Dispute not found"));
-
-        if (files != null && !files.isEmpty()) {
-            for (MultipartFile file : files) {
-                if (!file.isEmpty()) { // could potentially fail if file is half full
-                    String storedPath = null;
-                    try {
-                        storedPath = fileStorageService.storeFile(file);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    DisputeEvidenceFiles submissionFile =DisputeEvidenceFiles.builder()
-                            .submission(submission)
-                            .fileName(file.getOriginalFilename())
-                            .storedPath(storedPath)
-                            .contentType(file.getContentType())
-                            .sizeBytes(file.getSize())
-                            .build();
-                    disputeEvidenceFilesRepository.save(submissionFile);
-                }
+            String storedPath;
+            try {
+                storedPath = fileStorageService.storeFile(file);
+            } catch (IOException e) {
+                throw new IllegalStateException("Could not store evidence file", e);
             }
+
+            disputeEvidenceFilesRepository.save(DisputeEvidenceFiles.builder()
+                    .submission(submission)
+                    .fileName(file.getOriginalFilename())
+                    .storedPath(storedPath)
+                    .contentType(file.getContentType())
+                    .sizeBytes(file.getSize())
+                    .build());
         }
     }
+
 
     public DisputeNegotiationStageFreelancerDto getDisputeSubmissionForFreelancer(String inviteToken) {
 
@@ -225,12 +200,8 @@ public class DisputeService {
                 disputeEvidence.getDispute().getId().toString(),
                 disputeEvidence.getReason(),
                 files,
-                disputeEvidence.getDispute().getClientProposedAmount(), // going to change this so that the proposed
-                // amount is within the submission rather than the actual dispute
+                disputeEvidence.getDispute().getClientProposedAmount(),
                 disputeEvidence.getDispute().getMilestone().getAmount()
         );
-
-
     }
-
 }

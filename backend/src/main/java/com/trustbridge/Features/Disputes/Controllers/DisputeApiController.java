@@ -2,6 +2,7 @@ package com.trustbridge.Features.Disputes.Controllers;
 
 import com.trustbridge.Features.Disputes.Dto.DisputeCreationDto;
 import com.trustbridge.Features.Disputes.Dto.DisputeNegotiationStageFreelancerDto;
+import com.trustbridge.Features.Disputes.Dto.DisputeOpenedResult;
 import com.trustbridge.Features.Disputes.Service.DisputeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,9 @@ public class DisputeApiController {
             @RequestHeader("X-Review-Token") String reviewToken
     ) throws IOException {
 
-        disputeService.processClientDispute(dto);
+        DisputeOpenedResult result = disputeService.processClientDispute(dto, files, reviewToken);
+
+        disputeService.sendDisputeOpenedEmail(result);
 
         return ResponseEntity.ok("Dispute Successfully Opened");
     }
