@@ -34,7 +34,6 @@ export default function ClientDisputePage({
     const resolvedParams = use(params);
     const { milestoneId } = resolvedParams;
     const jobId = searchParams.get("jobId");
-    const reviewToken = sessionStorage.getItem('reviewToken');
 
     // Form States
     const [reason, setReason] = useState("");
